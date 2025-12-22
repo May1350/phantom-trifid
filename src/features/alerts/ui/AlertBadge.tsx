@@ -1,0 +1,208 @@
+import React, { useState, useEffect, useRef } from 'react';
+
+interface Alert {
+    id: string;
+    accountId: string;
+    campaignId: string;
+    campaignName: string;
+    type: 'daily_budget_over' | 'daily_budget_under' | 'progress_mismatch_over' | 'progress_mismatch_under' | 'campaign_ending' | 'budget_almost_exhausted' | 'budget_not_set';
+    severity: 'high' | 'medium' | 'low';
+    message: string;
+    metadata: {
+        dailyBudget?: number;
+        yesterdaySpend?: number;
+        periodProgress?: number;
+        budgetProgress?: number;
+        daysLeft?: number;
+        spendRate?: number;
+    };
+    isRead: boolean;
+    createdAt: string;
+}
+
+export const AlertBadge: React.FC = () => {
+    const [alerts, setAlerts] = useState<Alert[]>([]);
+    const [unreadCount, setUnreadCount] = useState(0);
+    const [isOpen, setIsOpen] = useState(false);
+    const popoverRef = useRef<HTMLDivElement>(null);
+
+    // 알람 목록 조회
+    const fetchAlerts = async () => {
+        try {
+            const res = await fetch('/api/alerts', {
+                credentials: 'include'
+            });
+            const data = await res.json();
+            setAlerts(data);
+            setUnreadCount(data.filter((a: Alert) => !a.isRead).length);
+        } catch (error) {
+            console.error('Failed to fetch alerts:', error);
+        }
+    };
+
+    // 초기 로드 및 주기적 업데이트 (30초마다)
+    useEffect(() => {
+        fetchAlerts();
+        const interval = setInterval(fetchAlerts, 30000);
+        return () => clearInterval(interval);
+    }, []);
+
+    // 팝오버 외부 클릭 시 닫기
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (popoverRef.current && !popoverRef.current.contains(event.target as Node)) {
+                setIsOpen(false);
+            }
+        };
+
+        if (isOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [isOpen]);
+
+    // 알람 읽음 처리
+    const markAsRead = async (id: string) => {
+        try {
+            await fetch(`/api/alerts/${id}/read`, {
+                method: 'POST',
+                credentials: 'include'
+            });
+            fetchAlerts();
+        } catch (error) {
+            console.error('Failed to mark alert as read:', error);
+        }
+    };
+
+    // 알람 삭제
+    const deleteAlert = async (id: string) => {
+        try {
+            await fetch(`/api/alerts/${id}`, {
+                method: 'DELETE',
+                credentials: 'include'
+            });
+            fetchAlerts();
+        } catch (error) {
+            console.error('Failed to delete alert:', error);
+        }
+    };
+
+    // Severity별 라벨 (Text based)
+    const getSeverityLabel = (severity: string) => {
+        switch (severity) {
+            case 'high': return '[CRITICAL]';
+            case 'medium': return '[WARNING]';
+            case 'low': return '[INFO]';
+            default: return '[INFO]';
+        }
+    };
+
+    // Type별 라벨 (Text based)
+    const getTypeLabel = (type: Alert['type']) => {
+        switch (type) {
+            case 'daily_budget_over': return 'BUDGET_OVERF';
+            case 'daily_budget_under': return 'BUDGET_UNDER';
+            case 'progress_mismatch_over': return 'PACE_FAST';
+            case 'progress_mismatch_under': return 'PACE_SLOW';
+            case 'campaign_ending': return 'ENDING_SOON';
+            case 'budget_almost_exhausted': return 'EXHAUSTED';
+            case 'budget_not_set': return 'NO_BUDGET';
+            default: return 'ALERT';
+        }
+    };
+
+    return (
+        <div className="relative font-mono" ref={popoverRef}>
+            {/* 알람 뱃지 버튼 */}
+            <button
+                onClick={() => setIsOpen(!isOpen)}
+                className={`relative p-2 border border-black transition-colors ${isOpen ? 'bg-black text-white' : 'hover:bg-gray-50'}`}
+            >
+                <span className="text-lg">BELL</span>
+                {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-black text-white text-[10px] font-bold border border-white flex items-center justify-center px-1 h-4 min-w-[16px]">
+                        {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                )}
+            </button>
+
+            {/* 알람 목록 팝오버 */}
+            {isOpen && (
+                <div className="absolute right-0 mt-2 w-96 bg-white border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] z-50 max-h-[500px] overflow-y-auto">
+                    <div className="border-b-2 border-black p-3 bg-black text-white flex justify-between items-center sticky top-0">
+                        <h3 className="font-bold uppercase text-xs tracking-wider">System Alerts ({alerts.length})</h3>
+                        <button
+                            onClick={() => setIsOpen(false)}
+                            className="text-white hover:text-gray-300 font-bold uppercase text-xs"
+                        >
+                            [CLOSE]
+                        </button>
+                    </div>
+
+                    <div className="divide-y divide-black/10">
+                        {alerts.length === 0 ? (
+                            <div className="p-8 text-center text-gray-400 text-xs uppercase">
+                                No active alerts
+                            </div>
+                        ) : (
+                            alerts.map((alert) => (
+                                <div
+                                    key={alert.id}
+                                    className={`p-4 ${!alert.isRead ? 'bg-gray-50' : 'bg-white'} hover:bg-gray-100 transition-colors group relative`}
+                                >
+                                    {/* Status Indicator Bar */}
+                                    {!alert.isRead && (
+                                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-black"></div>
+                                    )}
+
+                                    <div className="flex flex-col gap-2">
+                                        <div className="flex justify-between items-start">
+                                            <div className="flex flex-col">
+                                                <span className={`text-[10px] font-bold ${alert.severity === 'high' ? 'text-red-600' : 'text-gray-500'}`}>
+                                                    {getSeverityLabel(alert.severity)}
+                                                </span>
+                                                <span className="text-xs font-bold uppercase tracking-tight">
+                                                    {getTypeLabel(alert.type)}
+                                                </span>
+                                            </div>
+                                            <div className="text-[10px] text-gray-400">
+                                                {new Date(alert.createdAt).toLocaleDateString()}
+                                            </div>
+                                        </div>
+
+                                        <div className="text-xs text-gray-800 leading-relaxed break-words">
+                                            <span className="font-bold underline decoration-1 underline-offset-2 block mb-1">
+                                                {alert.campaignName}
+                                            </span>
+                                            {alert.message}
+                                        </div>
+
+                                        <div className="flex justify-end gap-2 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            {!alert.isRead && (
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); markAsRead(alert.id); }}
+                                                    className="text-[10px] px-2 py-1 bg-black text-white hover:bg-gray-800 border border-black uppercase"
+                                                >
+                                                    Mark Read
+                                                </button>
+                                            )}
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); deleteAlert(alert.id); }}
+                                                className="text-[10px] px-2 py-1 bg-white text-black hover:bg-red-50 border border-black uppercase"
+                                            >
+                                                Delete
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
