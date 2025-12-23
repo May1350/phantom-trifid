@@ -2,23 +2,19 @@ import { Router } from 'express';
 import bcrypt from 'bcrypt';
 import axios from 'axios';
 import { db } from '../db';
+import { logger } from '../utils/logger';
+import { authValidators, validate } from '../middleware/validator';
 
 const router = Router();
 
 // ==========================================
 // EMAIL SIGNUP
 // ==========================================
-router.post('/signup', async (req, res) => {
+router.post('/', authValidators.signup, validate, async (req: any, res: any) => {
     const { email, password, name } = req.body;
 
-    // 1. Validation
-    if (!email || !password || !name) {
-        return res.status(400).json({ error: 'All fields are required' });
-    }
 
-    if (password.length < 8) {
-        return res.status(400).json({ error: 'Password must be at least 8 characters' });
-    }
+    // Validation is now handled by middleware
 
     // 2. Duplicate Check
     const existing = db.getAccountByEmail(email);

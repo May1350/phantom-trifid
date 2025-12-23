@@ -1,0 +1,65 @@
+# Dependencies
+node_modules/
+server/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+
+# Build outputs
+dist/
+build/
+.vite/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+server/.env
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+logs/
+*.log
+server/logs/
+server.out
+frontend.out
+server/server.log
+
+# Test files
+*.test.ts
+*.test.js
+*.spec.ts
+*.spec.js
+__tests__/
+coverage/
+
+# Documentation
+README.md
+DEPLOYMENT.md
+*.md
+!package.json
+
+# Artifacts
+.gemini/
+.agent/
+
+# Database backups (will use Cloud Storage)
+server/database.json.backup
+
+# Misc
+.cache/
+tmp/
+temp/

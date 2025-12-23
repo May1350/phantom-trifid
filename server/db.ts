@@ -1,6 +1,7 @@
-import fs from 'fs';
+import fs from 'fs-extra';
 import path from 'path';
 import bcrypt from 'bcrypt';
+import { logger, logError } from './utils/logger';
 
 const DB_PATH = path.join(__dirname, 'database.json');
 
@@ -114,9 +115,9 @@ const WRITE_DEBOUNCE_MS = 100;
 // INITIALIZATION & MIGRATION
 // ==========================================
 
-const initializeDB = () => {
-    if (!fs.existsSync(DB_PATH)) {
-        // 새 DB 생성
+const initializeDB = async () => {
+    if (!await fs.pathExists(DB_PATH)) {
+        // Create new DB
         const initialData: DBData = {
             accounts: [],
             accountTokens: [],
@@ -125,8 +126,8 @@ const initializeDB = () => {
             alerts: [],
             settings: {}
         };
-        fs.writeFileSync(DB_PATH, JSON.stringify(initialData, null, 2));
-        console.log('[DB] New database created');
+        await fs.writeFile(DB_PATH, JSON.stringify(initialData, null, 2));
+        logger.info('New database created');
     } else {
         // 기존 DB 마이그레이션
         try {
@@ -201,7 +202,7 @@ const initializeDB = () => {
                     data.settings = {};
                 }
 
-                console.log('[DB] Migration complete: created admin and test agency accounts');
+                logger.info('Migration complete: created admin and test agency accounts');
             }
 
             // 기존 계정에 status 필드 없는 경우 마이그레이션
@@ -239,11 +240,11 @@ const initializeDB = () => {
             }
 
             if (changed) {
-                fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2));
-                console.log('[DB] Migration: Single token structure migrated to Multi-token array structure');
+                await fs.writeFile(DB_PATH, JSON.stringify(data, null, 2));
+                logger.info('Migration: Single token structure migrated to Multi-token array structure');
             }
         } catch (e) {
-            console.error('[DB] Migration error:', e);
+            logError(e as Error, { operation: 'db.migration' });
         }
     }
 };
@@ -265,7 +266,7 @@ export const db = {
             dbCache = JSON.parse(data);
             return dbCache!;
         } catch (error) {
-            console.error('[DB] Error reading:', error);
+            logError(error as Error, { operation: 'db.read', dbPath: DB_PATH });
             dbCache = {
                 accounts: [],
                 accountTokens: [],
@@ -278,18 +279,45 @@ export const db = {
         }
     },
 
-    write: (data: DBData) => {
+    write: async (data: DBData): Promise<void> => {
         dbCache = data;
 
         if (writeTimeout) {
             clearTimeout(writeTimeout);
         }
 
-        writeTimeout = setTimeout(() => {
+        writeTimeout = setTimeout(async () => {
+            const tempPath = `${DB_PATH}.tmp`;
+            const backupPath = `${DB_PATH}.backup`;
+
             try {
-                fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2));
+                // 1. Write to temporary file first
+                await fs.writeFile(tempPath, JSON.stringify(data, null, 2), 'utf-8');
+
+                // 2. Backup existing file if it exists
+                if (await fs.pathExists(DB_PATH)) {
+                    await fs.copy(DB_PATH, backupPath, { overwrite: true });
+                }
+
+                // 3. Atomic move: replace original with temp file
+                await fs.move(tempPath, DB_PATH, { overwrite: true });
+
+                logger.debug('DB saved successfully');
             } catch (error) {
-                console.error('[DB] Error writing:', error);
+                logError(error as Error, { operation: 'db.write', dbPath: DB_PATH });
+
+                // Clean up temp file if it exists
+                await fs.remove(tempPath).catch(() => { });
+
+                // Attempt to restore from backup
+                if (await fs.pathExists(backupPath)) {
+                    try {
+                        await fs.copy(backupPath, DB_PATH, { overwrite: true });
+                        logger.warn('DB write failed, restored from backup');
+                    } catch (restoreError) {
+                        logError(restoreError as Error, { operation: 'db.restore' });
+                    }
+                }
             }
             writeTimeout = null;
         }, WRITE_DEBOUNCE_MS);

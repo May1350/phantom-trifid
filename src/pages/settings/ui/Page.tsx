@@ -31,13 +31,25 @@ export const SettingsPage: React.FC = () => {
     const fetchStatus = async () => {
         try {
             const res = await fetch('/api/auth/status');
+
+            if (res.status === 401) {
+                // Redirect to login if unauthorized
+                window.location.href = '/login';
+                return;
+            }
+
+            if (!res.ok) {
+                throw new Error(`Failed to fetch status: ${res.status}`);
+            }
+
             const data = await res.json();
             setConnections({
-                google: data.google,
-                meta: data.meta
+                google: data.google || { connected: false, accounts: [] },
+                meta: data.meta || { connected: false, accounts: [] }
             });
         } catch (e) {
             console.error('Failed to fetch status', e);
+            // Don't crash, update state with safe defaults if needed, or keep initial state
         }
     };
 
@@ -46,17 +58,21 @@ export const SettingsPage: React.FC = () => {
     };
 
     const handleDisconnect = async (platform: 'google' | 'meta', email?: string) => {
-        const confirmMsg = email
-            ? `Disconnect ${email} from ${platform}?`
-            : `Disconnect all ${platform} accounts?`;
-
-        if (confirm(confirmMsg)) {
-            await fetch(`/api/auth/disconnect`, {
+        try {
+            const res = await fetch(`/api/auth/disconnect`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ platform, email })
             });
-            fetchStatus();
+
+            if (res.ok) {
+                // Refresh status after successful disconnect
+                await fetchStatus();
+            } else {
+                console.error('Failed to disconnect:', await res.text());
+            }
+        } catch (error) {
+            console.error('Error disconnecting account:', error);
         }
     };
 

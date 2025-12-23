@@ -27,7 +27,14 @@ dist-ssr
 .env.development.local
 .env.test.local
 .env.production.local
+*.env*
+!server/.env.example
+*.backup
+*.production
+
 database.json
+*.json.backup
+
 
 # Editor / OS
 .vscode/*

@@ -45,8 +45,15 @@ const AuthGuard: React.FC<{ children: React.ReactNode, requiredRole?: 'admin' | 
 
 function AppLayout() {
   const navigate = useNavigate();
-  // We read from storage directly for simplicity in this prototype
-  const role = storage.get<'admin' | 'agency' | null>('user_role', null) || 'agency';
+  const role = storage.get<'admin' | 'agency' | null>('user_role', null);
+
+  useEffect(() => {
+    if (!role) {
+      navigate('/login');
+    }
+  }, [role, navigate]);
+
+  if (!role) return <PageLoader />;
 
   const handleLogout = () => {
     storage.remove('user_role');

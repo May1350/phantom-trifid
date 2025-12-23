@@ -45,21 +45,28 @@ export const DashboardPage: React.FC = () => {
         fetch('/api/data/clients')
             .then(res => res.json())
             .then(data => {
-                setAccounts(data);
-                if (data.length > 0) {
-                    // Use functional update to avoid dependency on selectedAccountId
-                    setSelectedAccountId(prev => {
-                        if (!prev || !data.find((c: Account) => c.id === prev)) {
-                            return data[0].id;
-                        }
-                        return prev;
-                    });
+                if (Array.isArray(data)) {
+                    setAccounts(data);
+                    if (data.length > 0) {
+                        setSelectedAccountId(prev => {
+                            if (!prev || !data.find((c: Account) => c.id === prev)) {
+                                return data[0].id;
+                            }
+                            return prev;
+                        });
+                    } else {
+                        setSelectedAccountId('');
+                    }
                 } else {
+                    setAccounts([]);
                     setSelectedAccountId('');
                 }
             })
-            .catch(err => console.error('Failed to load clients', err));
-    }, []); // Removed selectedAccountId dependency to prevent unnecessary re-renders
+            .catch(err => {
+                console.error('Failed to load clients', err);
+                setAccounts([]);
+            });
+    }, []);
 
     useEffect(() => {
         loadClients();
@@ -87,11 +94,16 @@ export const DashboardPage: React.FC = () => {
         fetch(`/api/data/campaigns?${params.toString()}`)
             .then(res => res.json())
             .then(data => {
-                setCampaigns(data);
+                if (Array.isArray(data)) {
+                    setCampaigns(data);
+                } else {
+                    setCampaigns([]);
+                }
                 setLoading(false);
             })
             .catch(err => {
                 console.error('Failed to load campaigns', err);
+                setCampaigns([]);
                 setLoading(false);
             });
     }, [selectedAccountId, getDateRange]);

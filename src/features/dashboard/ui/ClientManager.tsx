@@ -34,15 +34,18 @@ export const ClientManager: React.FC<ClientManagerProps> = ({ isOpen, onClose, o
 
     const loadData = () => {
         setLoading(true);
+        const t = Date.now();
         Promise.all([
-            fetch('/api/data/connections').then(res => res.json()), // All available
-            fetch('/api/data/clients').then(res => res.json())      // My saved list
+            fetch(`/api/data/connections?t=${t}`).then(res => res.json()), // All available
+            fetch(`/api/data/clients?t=${t}`).then(res => res.json())      // My saved list
         ]).then(([connections, clients]) => {
-            setAvailableAccounts(connections);
-            setMyClients(clients);
+            setAvailableAccounts(Array.isArray(connections) ? connections : []);
+            setMyClients(Array.isArray(clients) ? clients : []);
             setLoading(false);
         }).catch(err => {
             console.error('Failed to load data', err);
+            setAvailableAccounts([]);
+            setMyClients([]);
             setLoading(false);
         });
     };

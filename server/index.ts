@@ -1,7 +1,10 @@
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import session from 'express-session';
+import helmet from 'helmet';
+import { config } from './config/env';
+import { logger, logError } from './utils/logger';
+import { authLimiter, apiLimiter, signupLimiter } from './middleware/rateLimiter';
 import authRoutes from './routes/auth';
 import dataRoutes from './routes/data';
 import sessionRoutes from './routes/session';
@@ -11,59 +14,135 @@ import authSignupRoutes from './routes/auth_signup';
 import { extractAccountId, requireAuth } from './middleware/auth';
 import cron from 'node-cron';
 import { runDailyAlertCheck } from './alert-checker';
-
-dotenv.config();
+import { startTokenRefreshScheduler } from './utils/tokenScheduler';
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = config.port;
+
+// Security headers
+app.use(helmet());
+
+// Dynamic CORS configuration
+const allowedOrigins = [
+    'http://localhost:3000',
+    process.env.FRONTEND_URL || ''
+].filter(Boolean);
 
 app.use(cors({
-    origin: 'http://localhost:3000',
+    origin: (origin, callback) => {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+
+        if (allowedOrigins.indexOf(origin) !== -1) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
     credentials: true
 }));
 app.use(express.json());
 
-// 세션 설정
+// Session configuration with enhanced security
 app.use(session({
-    secret: process.env.SESSION_SECRET || 'phantom-trifid-secret-key',
+    secret: config.session.secret,
     resave: false,
     saveUninitialized: false,
     cookie: {
-        secure: false, // HTTPS가 아니므로 false
+        secure: config.session.secure, // true in production (HTTPS)
         httpOnly: true,
-        maxAge: 1000 * 60 * 60 * 24 * 7 // 7일
+        sameSite: 'strict',
+        maxAge: 1000 * 60 * 60 * 24 * 7 // 7 days
     }
 }));
 
-// 모든 요청에서 accountId 추출
+// Extract accountId from session
 app.use(extractAccountId);
 
-// Routes
+// Routes with rate limiting
 app.use('/api/auth', authRoutes);
-app.use('/api/auth', authSignupRoutes); // Merges with existing authRoutes if paths differ, or use specific path
-app.use('/api/session', sessionRoutes);
-app.use('/api/accounts', requireAuth, accountsRoutes);
-app.use('/api/data', requireAuth, dataRoutes);
-app.use('/api/alerts', requireAuth, alertsRoutes);
+app.use('/api/auth/signup', signupLimiter, authSignupRoutes);
+app.use('/api/session', authLimiter, sessionRoutes);
+app.use('/api/accounts', requireAuth, apiLimiter, accountsRoutes);
+app.use('/api/data', requireAuth, apiLimiter, dataRoutes);
+app.use('/api/alerts', requireAuth, apiLimiter, alertsRoutes);
 
+// Root endpoint
 app.get('/', (req, res) => {
     res.send('Phantom Trifid Backend is running');
 });
 
+// Health check endpoint for Cloud Run
+app.get('/health', (req, res) => {
+    res.status(200).json({
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime()
+    });
+});
+
 // Global error handler
 app.use((err: any, req: any, res: any, next: any) => {
-    console.error('Error occurred:', err);
-    console.error('Stack trace:', err.stack);
-    res.status(500).send('Internal Server Error: ' + err.message);
+    logError(err, {
+        method: req.method,
+        path: req.path,
+        ip: req.ip
+    });
+
+    if (config.nodeEnv === 'production') {
+        // Production: Don't leak error details
+        res.status(500).json({ error: 'Internal server error' });
+    } else {
+        // Development: Provide detailed error info
+        res.status(500).json({
+            error: err.message,
+            stack: err.stack
+        });
+    }
 });
 
-// 매일 자정에 알람 체크 실행 (한국 시간 기준, cron은 서버 시간 기준으로 실행)
-cron.schedule('0 0 * * *', () => {
-    console.log('[CRON] Running daily alert check...');
-    runDailyAlertCheck();
+// Start daily alert check scheduler
+const scheduleDailyAlertCheck = () => {
+    const now = new Date();
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(0, 0, 0, 0);
+    const msUntilMidnight = tomorrow.getTime() - now.getTime();
+
+    setTimeout(() => {
+        runDailyAlertCheck();
+        setInterval(runDailyAlertCheck, 24 * 60 * 60 * 1000);
+    }, msUntilMidnight);
+
+    logger.info('Daily alert check scheduled at 00:00');
+};
+
+// Start token refresh scheduler (runs every 30 minutes)
+startTokenRefreshScheduler();
+
+scheduleDailyAlertCheck();
+
+const server = app.listen(PORT, () => {
+    logger.info(`Server is running on port ${PORT}`);
+    logger.info(`Environment: ${config.nodeEnv}`);
+    logger.info('Daily alert check scheduled at 00:00');
 });
 
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-    console.log('[Scheduler] Daily alert check scheduled at 00:00');
-});
+// Graceful shutdown
+const gracefulShutdown = (signal: string) => {
+    logger.info(`${signal} received, starting graceful shutdown...`);
+
+    server.close(() => {
+        logger.info('HTTP server closed');
+        process.exit(0);
+    });
+
+    // Force shutdown after 10 seconds
+    setTimeout(() => {
+        logger.error('Forced shutdown after timeout');
+        process.exit(1);
+    }, 10000);
+};
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));

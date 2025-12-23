@@ -33,10 +33,19 @@ export const AlertBadge: React.FC = () => {
                 credentials: 'include'
             });
             const data = await res.json();
-            setAlerts(data);
-            setUnreadCount(data.filter((a: Alert) => !a.isRead).length);
+
+            if (Array.isArray(data)) {
+                setAlerts(data);
+                setUnreadCount(data.filter((a: Alert) => !a.isRead).length);
+            } else {
+                // If not an array (e.g. { error: '...' }), reset state
+                setAlerts([]);
+                setUnreadCount(0);
+            }
         } catch (error) {
             console.error('Failed to fetch alerts:', error);
+            setAlerts([]);
+            setUnreadCount(0);
         }
     };
 

@@ -1,12 +1,15 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import axios from 'axios';
 import { db } from '../db';
+import { logger, logAuthEvent, logSecurityEvent } from '../utils/logger';
 
 const router = Router();
 
 // Check connection status
-router.get('/status', (req, res) => {
-    const accountId = req.accountId || 'admin';
+router.get('/status', (req: Request, res: Response) => {
+    const accountId = req.accountId;
+    if (!accountId) return res.status(401).json({ error: 'Unauthorized' });
+
     const googleTokens = db.getTokens(accountId, 'google');
     const metaTokens = db.getTokens(accountId, 'meta');
 
@@ -24,9 +27,10 @@ router.get('/status', (req, res) => {
 });
 
 // Disconnect
-router.post('/disconnect', (req, res) => {
+router.post('/disconnect', (req: Request, res: Response) => {
     const { platform, email } = req.body;
-    const accountId = req.accountId || 'admin';
+    const accountId = req.accountId;
+    if (!accountId) return res.status(401).json({ error: 'Unauthorized' });
 
     if (platform === 'google' || platform === 'meta') {
         db.removeToken(accountId, platform, email);
@@ -37,16 +41,21 @@ router.post('/disconnect', (req, res) => {
 });
 
 // Google OAuth
-router.get('/google', (req, res) => {
+router.get('/google', (req: Request, res: Response) => {
     const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
     const REDIRECT_URI = 'http://localhost:3000/api/auth/google/callback';
-    const accountId = req.accountId || 'admin';
+    const accountId = req.accountId;
+
+    if (!accountId) return res.status(401).send('Unauthorized');
 
     if (!GOOGLE_CLIENT_ID) {
         return res.status(500).send('Google Client ID not configured');
     }
 
     const scope = [
+        'openid',
+        'https://www.googleapis.com/auth/userinfo.email',
+        'https://www.googleapis.com/auth/userinfo.profile',
         'https://www.googleapis.com/auth/adwords'
     ].join(' ');
 
@@ -57,7 +66,7 @@ router.get('/google', (req, res) => {
     res.redirect(authUrl);
 });
 
-router.get('/google/callback', async (req, res) => {
+router.get('/google/callback', async (req: Request, res: Response) => {
     const { code } = req.query;
     const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
     const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
@@ -92,17 +101,23 @@ router.get('/google/callback', async (req, res) => {
 
         // Redirect back to settings on the FRONTEND port (3000)
         res.redirect(`http://localhost:3000/settings?status=success`);
-    } catch (error) {
-        console.error('Error exchanging token:', error);
+    } catch (error: any) {
+        logger.error('Google OAuth Error:', {
+            message: error.message,
+            response: error.response?.data,
+            stack: error.stack
+        });
         res.status(500).send('Authentication Failed');
     }
 });
 
 // Meta OAuth
-router.get('/meta', (req, res) => {
+router.get('/meta', (req: Request, res: Response) => {
     const META_CLIENT_ID = process.env.META_CLIENT_ID;
     const REDIRECT_URI = 'http://localhost:3000/api/auth/meta/callback';
-    const accountId = req.accountId || 'admin';
+    const accountId = req.accountId;
+
+    if (!accountId) return res.status(401).send('Unauthorized');
 
     // Strict Mode: Redirect to Facebook even if ID is missing (Client will see Facebook error)
     // This allows the user to confirm the redirect happens.
@@ -116,7 +131,7 @@ router.get('/meta', (req, res) => {
     res.redirect(authUrl);
 });
 
-router.get('/meta/callback', async (req, res) => {
+router.get('/meta/callback', async (req: Request, res: Response) => {
     const { code } = req.query;
     const META_CLIENT_ID = process.env.META_CLIENT_ID;
     const META_CLIENT_SECRET = process.env.META_CLIENT_SECRET;
@@ -152,8 +167,12 @@ router.get('/meta/callback', async (req, res) => {
         });
 
         res.redirect(`http://localhost:3000/settings?status=success`);
-    } catch (error) {
-        console.error('Error exchanging Meta token:', error);
+    } catch (error: any) {
+        logger.error('Meta OAuth Error:', {
+            message: error.message,
+            response: error.response?.data,
+            stack: error.stack
+        });
         res.status(500).send('Meta Authentication Failed');
     }
 });

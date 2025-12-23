@@ -1,6 +1,9 @@
 import { Router } from 'express';
 import axios from 'axios';
 import { db } from '../db';
+import { config } from '../config/env';
+import { logger } from '../utils/logger';
+import { getValidGoogleToken } from '../utils/tokenRefresh';
 
 const router = Router();
 
@@ -123,47 +126,132 @@ router.get('/connections', async (req, res) => {
     const accountId = req.accountId;
     if (!accountId) return res.status(401).json({ error: 'Unauthorized' });
 
-    const googleToken = db.getToken(accountId, 'google');
-    const metaToken = db.getToken(accountId, 'meta');
+    const googleTokens = db.getTokens(accountId, 'google');
+    const metaTokens = db.getTokens(accountId, 'meta');
 
     let accounts: any[] = [];
 
-    // 1. Fetch Google Accounts
-    if (googleToken) {
+    // 1. Fetch Google Accounts (Iterate over all connected Google accounts)
+    for (const token of googleTokens) {
         try {
-            const response = await axios.get('https://googleads.googleapis.com/v14/customers:listAccessibleCustomers', {
-                headers: { Authorization: `Bearer ${googleToken.access_token}` }
+            const developerToken = config.google.developerToken;
+            if (!developerToken) {
+                logger.warn(`[WARNING] Google Developer Token is missing. Cannot fetch Google Ads accounts for ${token.email}.`);
+                continue;
+            }
+
+            // Get valid token (auto-refresh if expired)
+            const validToken = await getValidGoogleToken(accountId, token.email || '');
+            if (!validToken) {
+                logger.error(`Failed to get valid token for ${token.email}`);
+                continue;
+            }
+
+            const response = await axios.get('https://googleads.googleapis.com/v19/customers:listAccessibleCustomers', {
+                headers: {
+                    'Authorization': `Bearer ${validToken}`,
+                    'developer-token': developerToken
+                }
             });
-            const googleAccounts = response.data.resourceNames.map((rn: string) => ({
-                id: rn,
-                name: `Google Ads (${rn.split('/')[1]})`,
-                provider: 'google',
-                status: 'CONNECTED'
-            }));
+
+            logger.info(`[DEBUG] Google API Response for ${token.email}`, {
+                resourceNames: response.data.resourceNames,
+                count: response.data.resourceNames?.length
+            });
+
+            // Fetch detailed info for each customer to get real account names
+            const googleAccounts = await Promise.all(
+                response.data.resourceNames.map(async (rn: string) => {
+                    const customerId = rn.split('/')[1];
+                    try {
+                        // Use Google Ads API search method with GAQL query
+                        const customerInfo = await axios.post(
+                            `https://googleads.googleapis.com/v19/customers/${customerId}/googleAds:search`,
+                            {
+                                query: `SELECT customer.id, customer.descriptive_name, customer.manager FROM customer WHERE customer.id = ${customerId}`
+                            },
+                            {
+                                headers: {
+                                    'Authorization': `Bearer ${validToken}`,
+                                    'developer-token': developerToken,
+                                    'Content-Type': 'application/json',
+                                    'login-customer-id': customerId  // Add login customer ID
+                                }
+                            }
+                        );
+
+                        // Extract descriptive_name from search results
+                        const result = customerInfo.data.results?.[0];
+                        const descriptiveName = result?.customer?.descriptiveName;
+
+                        // Format customer ID as XXX-XXX-XXXX
+                        const formattedId = customerId.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
+
+                        // Always show: "Name (XXX-XXX-XXXX)" or "Google Ads (XXX-XXX-XXXX)"
+                        const accountName = descriptiveName
+                            ? `${descriptiveName} (${formattedId})`
+                            : `Google Ads (${formattedId})`;
+
+                        return {
+                            id: rn,
+                            name: accountName,
+                            provider: 'google' as const,
+                            status: 'CONNECTED',
+                            connectedEmail: token.email
+                        };
+                    } catch (err: any) {
+                        // Enhanced error logging to diagnose 403 issues
+                        logger.warn(`Failed to fetch name for customer ${customerId}`, {
+                            error: err.message,
+                            status: err.response?.status,
+                            statusText: err.response?.statusText,
+                            errorDetails: err.response?.data
+                        });
+
+                        // Fallback: Format ID even on error
+                        const formattedId = customerId.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
+
+                        return {
+                            id: rn,
+                            name: `Google Ads (${formattedId})`,
+                            provider: 'google' as const,
+                            status: 'CONNECTED',
+                            connectedEmail: token.email
+                        };
+                    }
+                })
+            );
+
+            logger.info(`[DEBUG] Parsed Google Accounts`, { count: googleAccounts.length, accounts: googleAccounts });
+
             accounts = [...accounts, ...googleAccounts];
-        } catch (error) {
-            console.error('Error fetching Google accounts:', error);
+        } catch (error: any) {
+            logger.error(`Error fetching Google accounts for ${token.email}`, {
+                message: error.message,
+                responseData: error.response?.data
+            });
         }
     }
 
-    // 2. Fetch Meta Accounts
-    if (metaToken) {
+    // 2. Fetch Meta Accounts (Iterate over all connected Meta accounts)
+    for (const token of metaTokens) {
         try {
             const response = await axios.get('https://graph.facebook.com/v17.0/me/adaccounts', {
                 params: {
                     fields: 'id,name,account_id',
-                    access_token: metaToken.access_token
+                    access_token: token.access_token
                 }
             });
             const metaAccounts = response.data.data.map((acc: any) => ({
                 id: acc.id,
                 name: acc.name,
                 provider: 'meta',
-                status: 'CONNECTED'
+                status: 'CONNECTED',
+                connectedEmail: token.email
             }));
             accounts = [...accounts, ...metaAccounts];
-        } catch (error) {
-            console.error('Error fetching Meta accounts:', error);
+        } catch (error: any) {
+            logger.error(`Error fetching Meta accounts for ${token.email}`, { message: error.message });
         }
     }
 

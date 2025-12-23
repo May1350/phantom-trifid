@@ -1,57 +1,83 @@
 import { Router } from 'express';
 import bcrypt from 'bcrypt';
 import { db } from '../db';
+import { logger, logAuthEvent, logSecurityEvent } from '../utils/logger';
+import { authValidators, validate } from '../middleware/validator';
 
 const router = Router();
 
-// 로그인
-router.post('/login', async (req, res) => {
+// Login
+router.post('/login', authValidators.login, validate, async (req: any, res: any) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
         return res.status(400).json({ error: 'Email and password required' });
     }
 
-    // 계정 찾기
+    // Find account
     const account = db.getAccountByEmail(email);
     if (!account) {
+        logSecurityEvent('login_failed', { email, reason: 'account_not_found', ip: req.ip });
         return res.status(401).json({ error: 'Invalid email or password' });
     }
 
-    // 비밀번호 확인
+    // Check password
     const isValid = await bcrypt.compare(password, account.password);
     if (!isValid) {
+        logSecurityEvent('login_failed', { email, reason: 'invalid_password', ip: req.ip });
         return res.status(401).json({ error: 'Invalid email or password' });
     }
 
-    // 세션에 저장
-    if (req.session) {
-        (req.session as any).accountId = account.id;
-        (req.session as any).accountType = account.type;
+    // Check account status
+    if (account.status !== 'active') {
+        logSecurityEvent('login_blocked', { email, status: account.status, ip: req.ip });
+        return res.status(403).json({ error: 'Account is not active. Please contact support.' });
     }
 
-    res.json({
-        success: true,
-        account: {
-            id: account.id,
-            name: account.name,
-            type: account.type,
-            email: account.email
+    // Regenerate session to prevent session fixation
+    req.session.regenerate((err: any) => {
+        if (err) {
+            logSecurityEvent('session_regeneration_failed', { email, ip: req.ip });
+            return res.status(500).json({ error: 'Login failed. Please try again.' });
         }
+
+        // Save to session
+        (req.session as any).accountId = account.id;
+        (req.session as any).accountType = account.type;
+
+        logAuthEvent('login_success', { accountId: account.id, email, type: account.type });
+
+        res.json({
+            success: true,
+            account: {
+                id: account.id,
+                name: account.name,
+                type: account.type,
+                email: account.email
+            }
+        });
     });
 });
 
-// 로그아웃
+// Logout
 router.post('/logout', (req, res) => {
+    const accountId = (req.session as any)?.accountId;
+
     req.session?.destroy((err) => {
         if (err) {
+            logger.error('Logout failed', { error: err.message });
             return res.status(500).json({ error: 'Logout failed' });
         }
+
+        if (accountId) {
+            logAuthEvent('logout', { accountId });
+        }
+
         res.json({ success: true });
     });
 });
 
-// 현재 로그인된 계정 정보
+// Get current logged-in account info
 router.get('/current', (req, res) => {
     const accountId = (req.session as any)?.accountId;
 
