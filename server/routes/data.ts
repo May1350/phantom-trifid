@@ -164,24 +164,46 @@ router.get('/connections', async (req, res) => {
                 response.data.resourceNames.map(async (rn: string) => {
                     const customerId = rn.split('/')[1];
                     try {
-                        // Use Google Ads API search method with GAQL query
-                        const customerInfo = await axios.post(
-                            `https://googleads.googleapis.com/v19/customers/${customerId}/googleAds:search`,
-                            {
-                                query: `SELECT customer.id, customer.descriptive_name, customer.manager FROM customer WHERE customer.id = ${customerId}`
-                            },
-                            {
-                                headers: {
-                                    'Authorization': `Bearer ${validToken}`,
-                                    'developer-token': developerToken,
-                                    'Content-Type': 'application/json',
-                                    'login-customer-id': customerId  // Add login customer ID
+                        // Attempt to fetch name, trying both with and without login-customer-id if needed
+                        let customerInfo;
+                        try {
+                            customerInfo = await axios.post(
+                                `https://googleads.googleapis.com/v19/customers/${customerId}/googleAds:search`,
+                                {
+                                    query: `SELECT customer.id, customer.descriptive_name, customer.manager FROM customer WHERE customer.id = ${customerId}`
+                                },
+                                {
+                                    headers: {
+                                        'Authorization': `Bearer ${validToken}`,
+                                        'developer-token': developerToken,
+                                        'Content-Type': 'application/json',
+                                        'login-customer-id': customerId
+                                    }
                                 }
+                            );
+                        } catch (err: any) {
+                            if (err.response?.status === 403 || err.response?.status === 400) {
+                                // Try again WITHOUT login-customer-id header
+                                customerInfo = await axios.post(
+                                    `https://googleads.googleapis.com/v19/customers/${customerId}/googleAds:search`,
+                                    {
+                                        query: `SELECT customer.id, customer.descriptive_name, customer.manager FROM customer WHERE customer.id = ${customerId}`
+                                    },
+                                    {
+                                        headers: {
+                                            'Authorization': `Bearer ${validToken}`,
+                                            'developer-token': developerToken,
+                                            'Content-Type': 'application/json'
+                                        }
+                                    }
+                                );
+                            } else {
+                                throw err;
                             }
-                        );
+                        }
 
                         // Extract descriptive_name from search results
-                        const result = customerInfo.data.results?.[0];
+                        const result = customerInfo?.data.results?.[0];
                         const descriptiveName = result?.customer?.descriptiveName;
 
                         // Format customer ID as XXX-XXX-XXXX
@@ -221,6 +243,30 @@ router.get('/connections', async (req, res) => {
                     }
                 })
             );
+
+            // AUTO-UPDATE names in DB for existing clients if we found a better name
+            try {
+                const data = db.read();
+                let updated = false;
+                if (data.clients) {
+                    for (const client of data.clients) {
+                        if (client.accountId === accountId) {
+                            const match = googleAccounts.find(ga => ga.id === client.id);
+                            if (match && match.name !== client.name && !match.name.startsWith('Google Ads (')) {
+                                client.name = match.name;
+                                updated = true;
+                                logger.info(`Updating saved client name for ${client.id} to ${match.name}`);
+                            }
+                        }
+                    }
+                }
+                if (updated) {
+                    await db.write(data);
+                    logger.info(`Auto-updated client names in database for account ${accountId}`);
+                }
+            } catch (dbErr: any) {
+                logger.error('Failed to auto-update client names in DB', { error: dbErr.message });
+            }
 
             logger.info(`[DEBUG] Parsed Google Accounts`, { count: googleAccounts.length, accounts: googleAccounts });
 
