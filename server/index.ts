@@ -138,10 +138,10 @@ startTokenRefreshScheduler();
 
 scheduleDailyAlertCheck();
 
-const server = app.listen(PORT, () => {
-    logger.info(`Server is running on port ${PORT}`);
+const server = app.listen(PORT, '0.0.0.0', () => {
+    logger.info(`Server is running on 0.0.0.0:${PORT}`);
     logger.info(`Environment: ${config.nodeEnv}`);
-    logger.info('Daily alert check scheduled at 00:00');
+    logger.info(`Database path target: ${path.join(__dirname, 'database.json')}`);
 });
 
 // Graceful shutdown
