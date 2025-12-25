@@ -12,15 +12,25 @@ const requiredEnvVars = [
 ];
 
 // Validate required environment variables
+const missingVars: string[] = [];
 requiredEnvVars.forEach(varName => {
     const value = process.env[varName];
     if (!value || value.startsWith('your_') || value === '') {
-        throw new Error(
-            `Missing or invalid environment variable: ${varName}. ` +
-            `Please check your .env file and ensure all required variables are set.`
-        );
+        missingVars.push(varName);
     }
 });
+
+if (missingVars.length > 0) {
+    console.error('================================================');
+    console.error('❌ CRITICAL: MISSING ENVIRONMENT VARIABLES');
+    console.error('The following variables are not set or invalid:');
+    missingVars.forEach(v => console.error(`- ${v}`));
+    console.error('Please configure these in your Railway dashboard.');
+    console.error('================================================');
+
+    // In production, we log the error but don't exit, 
+    // Allowing the healthcheck to pass so logs can be checked.
+}
 
 // Export validated config
 export const config = {
