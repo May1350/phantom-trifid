@@ -88,12 +88,16 @@ if (process.env.NODE_ENV === 'production') {
     const publicPath = path.join(__dirname, 'public');
     app.use(express.static(publicPath));
 
-    // Catch-all route for React SPA
-    app.get('(.*)', (req, res, next) => {
-        // Skip if it's an API route or health check
-        if (req.path.startsWith('/api') || req.path === '/health') {
+    // Catch-all handle for React SPA (Robust middleware approach for Express 5)
+    app.use((req, res, next) => {
+        // Only handle GET requests that don't match previous routes
+        if (req.method !== 'GET') return next();
+
+        // Skip if it looks like an API route, health check, or has a file extension
+        if (req.path.startsWith('/api') || req.path === '/health' || req.path.includes('.')) {
             return next();
         }
+
         res.sendFile(path.join(publicPath, 'index.html'));
     });
 } else {
