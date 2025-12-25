@@ -20,6 +20,19 @@ import { startTokenRefreshScheduler } from './utils/tokenScheduler';
 const app = express();
 const PORT = config.port;
 
+// Trust proxy for Railway/Load balancer
+app.set('trust proxy', 1);
+
+// Immediate Health Check (before any middleware/auth)
+app.get('/health', (req, res) => {
+    res.status(200).json({
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        env: config.nodeEnv
+    });
+});
+
 // Security headers
 app.use(helmet());
 
@@ -68,14 +81,6 @@ app.use('/api/accounts', requireAuth, apiLimiter, accountsRoutes);
 app.use('/api/data', requireAuth, apiLimiter, dataRoutes);
 app.use('/api/alerts', requireAuth, apiLimiter, alertsRoutes);
 
-// Health check endpoint for Cloud Run
-app.get('/health', (req, res) => {
-    res.status(200).json({
-        status: 'healthy',
-        timestamp: new Date().toISOString(),
-        uptime: process.uptime()
-    });
-});
 
 // Serve static files in production
 if (process.env.NODE_ENV === 'production') {
