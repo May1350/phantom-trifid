@@ -70,10 +70,6 @@ RUN mkdir -p logs data
 
 # Set environment variables
 ENV NODE_ENV=production
-ENV PORT=8080
-
-# Expose port (railway provides PORT env var)
-EXPOSE 8080
 
 # Start the application using compiled index.js
 CMD ["node", "index.js"]
