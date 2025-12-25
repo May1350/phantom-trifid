@@ -19,7 +19,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
 
         try {
             const response = await axios.post(
-                'http://localhost:3001/api/session/login',
+                '/api/session/login',
                 { email, password },
                 { withCredentials: true }
             );

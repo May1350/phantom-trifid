@@ -29,7 +29,7 @@ export const AdminAccountsPage: React.FC = () => {
 
     const fetchAccounts = async () => {
         try {
-            const response = await axios.get('http://localhost:3001/api/accounts', {
+            const response = await axios.get('/api/accounts', {
                 withCredentials: true
             });
             setAccounts(response.data);
@@ -47,7 +47,7 @@ export const AdminAccountsPage: React.FC = () => {
 
     const fetchAccountStats = async (accountId: string) => {
         try {
-            const response = await axios.get(`http://localhost:3001/api/accounts/${accountId}/stats`, {
+            const response = await axios.get(`/api/accounts/${accountId}/stats`, {
                 withCredentials: true
             });
             setStats(prev => ({ ...prev, [accountId]: response.data.stats }));
@@ -67,7 +67,7 @@ export const AdminAccountsPage: React.FC = () => {
         }
 
         try {
-            await axios.delete(`http://localhost:3001/api/accounts/${accountId}`, {
+            await axios.delete(`/api/accounts/${accountId}`, {
                 withCredentials: true
             });
             fetchAccounts();
@@ -180,7 +180,7 @@ const CreateAccountModal: React.FC<CreateAccountModalProps> = ({ onClose, onSucc
         setError('');
 
         try {
-            await axios.post('http://localhost:3001/api/accounts', formData, {
+            await axios.post('/api/accounts', formData, {
                 withCredentials: true
             });
             onSuccess();

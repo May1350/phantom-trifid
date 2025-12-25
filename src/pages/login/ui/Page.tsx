@@ -39,7 +39,7 @@ export const LoginPage: React.FC = () => {
 
                 <div className="mt-8 pt-8 border-t border-gray-100 space-y-4">
                     <button
-                        onClick={() => window.location.href = 'http://localhost:3001/api/auth/google/login'}
+                        onClick={() => window.location.href = '/api/auth/google/login'}
                         className="w-full bg-white border-2 border-black py-3 font-bold uppercase hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-sm"
                     >
                         <span className="font-serif font-black text-lg">G</span>
