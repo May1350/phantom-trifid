@@ -68,11 +68,6 @@ app.use('/api/accounts', requireAuth, apiLimiter, accountsRoutes);
 app.use('/api/data', requireAuth, apiLimiter, dataRoutes);
 app.use('/api/alerts', requireAuth, apiLimiter, alertsRoutes);
 
-// Root endpoint
-app.get('/', (req, res) => {
-    res.send('Phantom Trifid Backend is running');
-});
-
 // Health check endpoint for Cloud Run
 app.get('/health', (req, res) => {
     res.status(200).json({
@@ -81,6 +76,26 @@ app.get('/health', (req, res) => {
         uptime: process.uptime()
     });
 });
+
+// Serve static files in production
+if (process.env.NODE_ENV === 'production') {
+    const publicPath = path.join(__dirname, 'public');
+    app.use(express.static(publicPath));
+
+    // Catch-all route for React SPA
+    app.get('*', (req, res, next) => {
+        // Skip if it's an API route or health check
+        if (req.path.startsWith('/api') || req.path === '/health') {
+            return next();
+        }
+        res.sendFile(path.join(publicPath, 'index.html'));
+    });
+} else {
+    // Root endpoint for development
+    app.get('/', (req, res) => {
+        res.send('Phantom Trifid Backend is running (Development)');
+    });
+}
 
 // Global error handler
 app.use((err: any, req: any, res: any, next: any) => {

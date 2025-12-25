@@ -4,7 +4,7 @@ FROM node:20-alpine AS frontend-builder
 
 WORKDIR /app
 
-# Copy frontend package files
+# Copy root package files for build scripts
 COPY package*.json ./
 COPY tsconfig*.json ./
 COPY vite.config.ts ./
@@ -12,8 +12,8 @@ COPY tailwind.config.js ./
 COPY postcss.config.js ./
 COPY eslint.config.js ./
 
-# Install frontend dependencies
-RUN npm ci --only=production
+# Install ALL dependencies (including devDependencies like vite, terser, etc.)
+RUN npm install
 
 # Copy frontend source
 COPY index.html ./
@@ -32,13 +32,13 @@ WORKDIR /app
 COPY server/package*.json ./
 COPY server/tsconfig.json ./
 
-# Install backend dependencies
-RUN npm ci --only=production
+# Install ALL dependencies (including devDependencies like typescript)
+RUN npm install
 
 # Copy backend source
 COPY server/ ./
 
-# Compile TypeScript
+# Compile TypeScript to dist/
 RUN npx tsc
 
 # Stage 3: Production Runtime
@@ -46,25 +46,20 @@ FROM node:20-alpine AS production
 
 WORKDIR /app
 
-# Install production dependencies only
+# Install production dependencies only for the server
 COPY server/package*.json ./
 RUN npm ci --only=production && npm cache clean --force
 
 # Copy compiled backend from builder
-COPY --from=backend-builder /app/*.js ./
-COPY --from=backend-builder /app/config ./config/
-COPY --from=backend-builder /app/middleware ./middleware/
-COPY --from=backend-builder /app/routes ./routes/
-COPY --from=backend-builder /app/utils ./utils/
+COPY --from=backend-builder /app/dist ./
+# Copy database file
+COPY server/database.json ./database.json
 
-# Copy built frontend
+# Copy built frontend from Stage 1 to /app/public
 COPY --from=frontend-builder /app/dist ./public
 
 # Create necessary directories
 RUN mkdir -p logs data
-
-# Copy database file (will be replaced by Cloud Storage in production)
-COPY server/database.json ./database.json
 
 # Set environment variables
 ENV NODE_ENV=production
@@ -77,5 +72,5 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD node -e "require('http').get('http://localhost:8080/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
-# Start the application
+# Start the application using compiled index.js
 CMD ["node", "index.js"]
