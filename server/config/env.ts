@@ -38,7 +38,7 @@ export const config = {
     nodeEnv: process.env.NODE_ENV || 'development',
 
     session: {
-        secret: process.env.SESSION_SECRET!,
+        secret: process.env.SESSION_SECRET || 'temporary_secret_for_healthcheck_only',
         secure: process.env.NODE_ENV === 'production',
     },
 

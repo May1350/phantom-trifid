@@ -72,12 +72,8 @@ RUN mkdir -p logs data
 ENV NODE_ENV=production
 ENV PORT=8080
 
-# Expose port
+# Expose port (railway provides PORT env var)
 EXPOSE 8080
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:8080/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
 # Start the application using compiled index.js
 CMD ["node", "index.js"]
