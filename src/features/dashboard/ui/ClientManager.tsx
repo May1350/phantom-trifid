@@ -25,10 +25,12 @@ export const ClientManager: React.FC<ClientManagerProps> = ({ isOpen, onClose, o
     const [editingCommission, setEditingCommission] = useState<string | null>(null);
     const [commissionType, setCommissionType] = useState<'fixed' | 'percentage'>('fixed');
     const [commissionValue, setCommissionValue] = useState<string>('');
+    const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => {
         if (isOpen) {
             loadData();
+            setSearchTerm('');
         }
     }, [isOpen]);
 
@@ -149,9 +151,19 @@ export const ClientManager: React.FC<ClientManagerProps> = ({ isOpen, onClose, o
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
             <div className="bg-white border-2 border-black w-full max-w-3xl p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
-                <div className="flex justify-between items-center mb-6 border-b-2 border-black pb-2">
+                <div className="flex justify-between items-center mb-4 border-b-2 border-black pb-2">
                     <h2 className="text-xl font-black uppercase">Manage Clients</h2>
                     <button onClick={onClose} className="font-mono text-xs hover:underline">[CLOSE]</button>
+                </div>
+
+                <div className="mb-6">
+                    <input
+                        type="text"
+                        placeholder="SEARCH CLIENTS BY NAME..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full border-2 border-black px-3 py-2 text-xs font-mono focus:outline-none focus:bg-gray-50 placeholder:text-gray-400"
+                    />
                 </div>
 
                 {loading ? (
@@ -173,86 +185,88 @@ export const ClientManager: React.FC<ClientManagerProps> = ({ isOpen, onClose, o
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {availableAccounts.map(acc => {
-                                        const added = isAdded(acc.id);
-                                        const isEditing = editingCommission === acc.id;
+                                    {availableAccounts
+                                        .filter(acc => acc.name.toLowerCase().includes(searchTerm.toLowerCase()))
+                                        .map(acc => {
+                                            const added = isAdded(acc.id);
+                                            const isEditing = editingCommission === acc.id;
 
-                                        return (
-                                            <tr key={acc.id} className="border-b border-gray-200 last:border-0 hover:bg-gray-50">
-                                                <td className="py-3 font-bold text-sm">{acc.name}</td>
-                                                <td className="py-3 text-xs font-mono text-gray-500">{acc.provider.toUpperCase()}</td>
-                                                <td className="py-3 text-xs font-mono">
-                                                    {isEditing ? (
-                                                        <div className="flex items-center gap-1">
-                                                            <select
-                                                                value={commissionType}
-                                                                onChange={(e) => setCommissionType(e.target.value as 'fixed' | 'percentage')}
-                                                                className="border border-black px-1 py-0.5 text-xs"
-                                                            >
-                                                                <option value="fixed">Fixed</option>
-                                                                <option value="percentage">%</option>
-                                                            </select>
-                                                            <input
-                                                                type="number"
-                                                                value={commissionValue}
-                                                                onChange={(e) => setCommissionValue(e.target.value)}
-                                                                placeholder="0"
-                                                                className="border border-black px-1 py-0.5 w-20 text-xs"
-                                                            />
-                                                        </div>
-                                                    ) : (
-                                                        <span>{getCommissionDisplay(acc)}</span>
-                                                    )}
-                                                </td>
-                                                <td className="py-3 text-right">
-                                                    <div className="flex gap-1 justify-end">
+                                            return (
+                                                <tr key={acc.id} className="border-b border-gray-200 last:border-0 hover:bg-gray-50">
+                                                    <td className="py-3 font-bold text-sm">{acc.name}</td>
+                                                    <td className="py-3 text-xs font-mono text-gray-500">{acc.provider.toUpperCase()}</td>
+                                                    <td className="py-3 text-xs font-mono">
                                                         {isEditing ? (
-                                                            <>
-                                                                <button
-                                                                    onClick={() => handleSaveCommission(acc.id)}
-                                                                    className="text-xs font-mono bg-black text-white px-2 py-1 hover:bg-green-600 transition-colors"
+                                                            <div className="flex items-center gap-1">
+                                                                <select
+                                                                    value={commissionType}
+                                                                    onChange={(e) => setCommissionType(e.target.value as 'fixed' | 'percentage')}
+                                                                    className="border border-black px-1 py-0.5 text-xs"
                                                                 >
-                                                                    SAVE
-                                                                </button>
-                                                                <button
-                                                                    onClick={handleCancelEdit}
-                                                                    className="text-xs font-mono border border-black px-2 py-1 hover:bg-gray-200 transition-colors"
-                                                                >
-                                                                    CANCEL
-                                                                </button>
-                                                            </>
+                                                                    <option value="fixed">Fixed</option>
+                                                                    <option value="percentage">%</option>
+                                                                </select>
+                                                                <input
+                                                                    type="number"
+                                                                    value={commissionValue}
+                                                                    onChange={(e) => setCommissionValue(e.target.value)}
+                                                                    placeholder="0"
+                                                                    className="border border-black px-1 py-0.5 w-20 text-xs"
+                                                                />
+                                                            </div>
                                                         ) : (
-                                                            <>
-                                                                {added ? (
-                                                                    <>
+                                                            <span>{getCommissionDisplay(acc)}</span>
+                                                        )}
+                                                    </td>
+                                                    <td className="py-3 text-right">
+                                                        <div className="flex gap-1 justify-end">
+                                                            {isEditing ? (
+                                                                <>
+                                                                    <button
+                                                                        onClick={() => handleSaveCommission(acc.id)}
+                                                                        className="text-xs font-mono bg-black text-white px-2 py-1 hover:bg-green-600 transition-colors"
+                                                                    >
+                                                                        SAVE
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={handleCancelEdit}
+                                                                        className="text-xs font-mono border border-black px-2 py-1 hover:bg-gray-200 transition-colors"
+                                                                    >
+                                                                        CANCEL
+                                                                    </button>
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    {added ? (
+                                                                        <>
+                                                                            <button
+                                                                                onClick={() => handleEditCommission(acc)}
+                                                                                className="text-xs font-mono border border-black px-2 py-1 hover:bg-black hover:text-white transition-colors"
+                                                                            >
+                                                                                COMMISSION
+                                                                            </button>
+                                                                            <button
+                                                                                onClick={() => handleRemove(acc.id)}
+                                                                                className="text-xs font-mono bg-black text-white px-2 py-1 hover:bg-red-600 transition-colors"
+                                                                            >
+                                                                                REMOVE
+                                                                            </button>
+                                                                        </>
+                                                                    ) : (
                                                                         <button
-                                                                            onClick={() => handleEditCommission(acc)}
+                                                                            onClick={() => handleAdd(acc)}
                                                                             className="text-xs font-mono border border-black px-2 py-1 hover:bg-black hover:text-white transition-colors"
                                                                         >
-                                                                            COMMISSION
+                                                                            ADD
                                                                         </button>
-                                                                        <button
-                                                                            onClick={() => handleRemove(acc.id)}
-                                                                            className="text-xs font-mono bg-black text-white px-2 py-1 hover:bg-red-600 transition-colors"
-                                                                        >
-                                                                            REMOVE
-                                                                        </button>
-                                                                    </>
-                                                                ) : (
-                                                                    <button
-                                                                        onClick={() => handleAdd(acc)}
-                                                                        className="text-xs font-mono border border-black px-2 py-1 hover:bg-black hover:text-white transition-colors"
-                                                                    >
-                                                                        ADD
-                                                                    </button>
-                                                                )}
-                                                            </>
-                                                        )}
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
+                                                                    )}
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
                                 </tbody>
                             </table>
                         )}
