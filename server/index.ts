@@ -25,6 +25,7 @@ app.set('trust proxy', 1);
 
 // Immediate Health Check (before any middleware/auth)
 app.get('/health', (req, res) => {
+    logger.info(`Health check ping received from ${req.ip}`);
     res.status(200).json({
         status: 'healthy',
         timestamp: new Date().toISOString(),
