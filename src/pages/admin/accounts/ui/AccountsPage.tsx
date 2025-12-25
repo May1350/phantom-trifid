@@ -21,7 +21,6 @@ export const AdminAccountsPage: React.FC = () => {
     const [accounts, setAccounts] = useState<Account[]>([]);
     const [loading, setLoading] = useState(true);
     const [showCreateModal, setShowCreateModal] = useState(false);
-    const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
     const [stats, setStats] = useState<Record<string, AccountStats>>({});
 
     useEffect(() => {
