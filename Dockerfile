@@ -52,8 +52,6 @@ RUN npm ci --only=production && npm cache clean --force
 
 # Copy compiled backend from builder
 COPY --from=backend-builder /app/dist ./
-# Copy database file
-COPY server/database.json ./database.json
 
 # Copy built frontend from Stage 1 to /app/public
 COPY --from=frontend-builder /app/dist ./public
