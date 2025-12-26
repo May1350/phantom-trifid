@@ -20,7 +20,7 @@ router.post('/login', authValidators.login, validate, async (req: any, res: any)
 
     const account = db.getAccountByEmail(email);
     if (!account) {
-        logger.warn(`Login failed: Account not found for ${email}. Available emails: ${accounts.map(a => a.email).join(', ')}`);
+        logger.warn(`Login failed: Account not found for ${email}. Available emails: ${accounts.map((a: any) => a.email).join(', ')}`);
         logSecurityEvent('login_failed', { email, reason: 'account_not_found', ip: req.ip });
         return res.status(401).json({ error: 'Invalid email or password' });
     }

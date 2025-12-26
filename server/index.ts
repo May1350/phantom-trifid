@@ -12,6 +12,7 @@ import sessionRoutes from './routes/session';
 import accountsRoutes from './routes/accounts';
 import alertsRoutes from './routes/alerts';
 import authSignupRoutes from './routes/auth_signup';
+import { db } from './db';
 import { extractAccountId, requireAuth } from './middleware/auth';
 import cron from 'node-cron';
 import { runDailyAlertCheck } from './alert-checker';
@@ -67,8 +68,8 @@ app.get('/api/debug-db-direct', (req, res) => {
         const data = db.read();
         res.json({
             accounts_count: data.accounts.length,
-            emails: data.accounts.map(a => a.email),
-            sample_admin: data.accounts.find(a => a.id === 'admin') ? 'Found' : 'Not Found'
+            emails: data.accounts.map((a: any) => a.email),
+            sample_admin: data.accounts.find((a: any) => a.id === 'admin') ? 'Found' : 'Not Found'
         });
     } catch (e: any) {
         res.status(500).json({ error: e.message });
