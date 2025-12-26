@@ -39,25 +39,46 @@ app.use(helmet({
     contentSecurityPolicy: false // Loosen CSP for initial deployment stability
 }));
 
-// Serve static files EARLY (before CORS/Session/Parsers)
+// Dynamic CORS configuration
+app.use(cors({
+    origin: true,
+    credentials: true
+}));
+
+app.use(express.json());
+
+// --- API ROUTES FIRST ---
+app.use('/api/auth', authRoutes);
+app.use('/api/auth/signup', signupLimiter, authSignupRoutes);
+app.use('/api/session', authLimiter, sessionRoutes);
+app.use('/api/accounts', requireAuth, apiLimiter, accountsRoutes);
+app.use('/api/data', requireAuth, apiLimiter, dataRoutes);
+app.use('/api/alerts', requireAuth, apiLimiter, alertsRoutes);
+
+// Debug Route
+app.get('/api/debug-db', (req, res) => {
+    try {
+        const accounts = db.getAccounts();
+        res.json({
+            count: accounts.length,
+            emails: accounts.map(a => a.email),
+            env: config.nodeEnv,
+            db_path: path.join(__dirname, 'database.json')
+        });
+    } catch (e: any) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// Serve static files AFTER API routes
 if (process.env.NODE_ENV === 'production') {
     const publicPath = path.join(__dirname, 'public');
     const fs = require('fs');
     if (fs.existsSync(publicPath)) {
         logger.info(`Static files directory found at: ${publicPath}`);
         app.use(express.static(publicPath));
-    } else {
-        logger.error(`CRITICAL: Static files directory NOT FOUND at: ${publicPath}`);
     }
 }
-
-// Dynamic CORS configuration
-app.use(cors({
-    origin: true, // Allow all origins in production for stability, or customize as needed
-    credentials: true
-}));
-
-app.use(express.json());
 
 // Session configuration with enhanced security
 app.use(session({
@@ -74,14 +95,6 @@ app.use(session({
 
 // Extract accountId from session
 app.use(extractAccountId);
-
-// Routes with rate limiting
-app.use('/api/auth', authRoutes);
-app.use('/api/auth/signup', signupLimiter, authSignupRoutes);
-app.use('/api/session', authLimiter, sessionRoutes);
-app.use('/api/accounts', requireAuth, apiLimiter, accountsRoutes);
-app.use('/api/data', requireAuth, apiLimiter, dataRoutes);
-app.use('/api/alerts', requireAuth, apiLimiter, alertsRoutes);
 
 
 // Catch-all handle for React SPA in production
