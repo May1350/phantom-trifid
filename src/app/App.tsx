@@ -7,6 +7,7 @@ import { storage } from '../shared/lib/storage';
 // Lazy load page components for better performance
 const LoginPage = lazy(() => import('../pages/login/ui/Page').then(m => ({ default: m.LoginPage })));
 const SignupPage = lazy(() => import('../pages/signup/ui/Page').then(m => ({ default: m.SignupPage })));
+const LandingPage = lazy(() => import('../pages/landing/ui/Page').then(m => ({ default: m.LandingPage })));
 const AdminPage = lazy(() => import('../pages/admin/ui/Page').then(m => ({ default: m.AdminPage })));
 const DashboardPage = lazy(() => import('../pages/dashboard/ui/Page').then(m => ({ default: m.DashboardPage })));
 const SettingsPage = lazy(() => import('../pages/settings/ui/Page').then(m => ({ default: m.SettingsPage })));
@@ -103,6 +104,7 @@ function App() {
     <BrowserRouter>
       <Suspense fallback={<PageLoader />}>
         <Routes>
+          <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/auth-callback" element={<AuthCallbackPage />} />
