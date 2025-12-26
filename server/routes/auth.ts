@@ -2,6 +2,8 @@ import { Router, Request, Response } from 'express';
 import axios from 'axios';
 import { db } from '../db';
 import { logger, logAuthEvent, logSecurityEvent } from '../utils/logger';
+import { config } from '../config/env';
+import bcrypt from 'bcrypt';
 
 const router = Router();
 
@@ -174,6 +176,88 @@ router.get('/meta/callback', async (req: Request, res: Response) => {
             stack: error.stack
         });
         res.status(500).send('Meta Authentication Failed');
+    }
+});
+
+// ==========================================
+// GOOGLE LOGIN (IDENTITY)
+// ==========================================
+// This is used for logging in via Google, separate from connecting an ads account.
+router.get('/google/login', (req, res) => {
+    const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+    const REDIRECT_URI = `${config.frontend.url}/api/auth/google/login/callback`;
+
+    const scope = [
+        'https://www.googleapis.com/auth/userinfo.profile',
+        'https://www.googleapis.com/auth/userinfo.email'
+    ].join(' ');
+
+    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=${scope}&access_type=online&prompt=select_account`;
+
+    res.redirect(authUrl);
+});
+
+router.get('/google/login/callback', async (req, res) => {
+    const { code } = req.query;
+    const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+    const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
+    const REDIRECT_URI = `${config.frontend.url}/api/auth/google/login/callback`;
+
+    if (!code) return res.status(400).send('No code provided');
+
+    try {
+        const { data: tokenData } = await axios.post('https://oauth2.googleapis.com/token', {
+            client_id: GOOGLE_CLIENT_ID,
+            client_secret: GOOGLE_CLIENT_SECRET,
+            code,
+            grant_type: 'authorization_code',
+            redirect_uri: REDIRECT_URI
+        });
+
+        const { data: userInfo } = await axios.get('https://www.googleapis.com/oauth2/v2/userinfo', {
+            headers: { Authorization: `Bearer ${tokenData.access_token}` }
+        });
+
+        const { email, name } = userInfo;
+
+        let account = db.getAccountByEmail(email);
+
+        if (!account) {
+            const newAccountId = `user_${Date.now()}`;
+            const randomPassword = await bcrypt.hash(Math.random().toString(36), 10);
+
+            db.createAccount({
+                id: newAccountId,
+                name: name,
+                email: email,
+                password: randomPassword,
+                type: 'agency',
+                status: 'active',
+                provider: 'google'
+            });
+
+            account = db.getAccount(newAccountId);
+        }
+
+        if (account) {
+            if (req.session) {
+                (req.session as any).accountId = account.id;
+                (req.session as any).accountType = account.type;
+            }
+
+            // Redirect to frontend auth-callback to handle role-based navigation
+            const encodedName = encodeURIComponent(account.name);
+            res.redirect(`${config.frontend.url}/auth-callback?role=${account.type}&id=${account.id}&name=${encodedName}&email=${account.email}`);
+        } else {
+            res.status(500).send('Account creation failed');
+        }
+
+    } catch (error: any) {
+        logger.error('Error in Google Login Callback:', {
+            message: error.message,
+            stack: error.stack
+        });
+        res.status(500).send('Google Login Failed');
     }
 });
 

@@ -229,8 +229,38 @@ const initializeDB = async () => {
                 logger.info('Migration complete: created admin and test agency accounts');
             }
 
-            // 기존 계정에 status 필드 없는 경우 마이그레이션
-            if (data.accounts) {
+            // Ensure default accounts exist if accounts list is empty
+            if (!data.accounts || data.accounts.length === 0) {
+                logger.info('[DB] No accounts found, seeding default accounts...');
+                const adminPassword = bcrypt.hashSync('1111', 10);
+                const agencyPassword = bcrypt.hashSync('1111', 10);
+
+                const adminAccount: Account = {
+                    id: 'admin',
+                    name: 'System Administrator',
+                    type: 'admin',
+                    email: 'admin@gmail.com',
+                    password: adminPassword,
+                    createdAt: new Date().toISOString(),
+                    status: 'active',
+                    provider: 'email'
+                };
+
+                const agencyAccount: Account = {
+                    id: 'agency_test',
+                    name: 'Test Agency',
+                    type: 'agency',
+                    email: 'test@gmail.com',
+                    password: agencyPassword,
+                    createdAt: new Date().toISOString(),
+                    status: 'active',
+                    provider: 'email'
+                };
+
+                data.accounts = [adminAccount, agencyAccount];
+                changed = true;
+            } else {
+                // 기존 계정에 status 필드 없는 경우 마이그레이션
                 data.accounts.forEach((acc: any) => {
                     if (!acc.status) {
                         acc.status = 'active';
