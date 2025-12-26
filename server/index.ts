@@ -35,27 +35,28 @@ app.get('/health', (req, res) => {
 });
 
 // Security headers
-app.use(helmet());
+app.use(helmet({
+    contentSecurityPolicy: false // Loosen CSP for initial deployment stability
+}));
+
+// Serve static files EARLY (before CORS/Session/Parsers)
+if (process.env.NODE_ENV === 'production') {
+    const publicPath = path.join(__dirname, 'public');
+    const fs = require('fs');
+    if (fs.existsSync(publicPath)) {
+        logger.info(`Static files directory found at: ${publicPath}`);
+        app.use(express.static(publicPath));
+    } else {
+        logger.error(`CRITICAL: Static files directory NOT FOUND at: ${publicPath}`);
+    }
+}
 
 // Dynamic CORS configuration
-const allowedOrigins = [
-    'http://localhost:3000',
-    process.env.FRONTEND_URL || ''
-].filter(Boolean);
-
 app.use(cors({
-    origin: (origin, callback) => {
-        // Allow requests with no origin (like mobile apps or curl requests)
-        if (!origin) return callback(null, true);
-
-        if (allowedOrigins.indexOf(origin) !== -1) {
-            callback(null, true);
-        } else {
-            callback(new Error('Not allowed by CORS'));
-        }
-    },
+    origin: true, // Allow all origins in production for stability, or customize as needed
     credentials: true
 }));
+
 app.use(express.json());
 
 // Session configuration with enhanced security
@@ -83,22 +84,20 @@ app.use('/api/data', requireAuth, apiLimiter, dataRoutes);
 app.use('/api/alerts', requireAuth, apiLimiter, alertsRoutes);
 
 
-// Serve static files in production
+// Catch-all handle for React SPA in production
 if (process.env.NODE_ENV === 'production') {
     const publicPath = path.join(__dirname, 'public');
-    app.use(express.static(publicPath));
-
-    // Catch-all handle for React SPA (Robust middleware approach for Express 5)
     app.use((req, res, next) => {
-        // Only handle GET requests that don't match previous routes
         if (req.method !== 'GET') return next();
-
-        // Skip if it looks like an API route, health check, or has a file extension
         if (req.path.startsWith('/api') || req.path === '/health' || req.path.includes('.')) {
             return next();
         }
-
-        res.sendFile(path.join(publicPath, 'index.html'));
+        res.sendFile(path.join(publicPath, 'index.html'), (err) => {
+            if (err) {
+                logger.error(`Failed to send index.html: ${err.message}`);
+                next(err);
+            }
+        });
     });
 } else {
     // Root endpoint for development
