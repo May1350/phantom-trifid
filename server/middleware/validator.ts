@@ -10,6 +10,11 @@ export const validate = (req: Request, res: Response, next: NextFunction) => {
     }
 
     // Log validation errors as potential security probe
+    logger.warn(`Validation failed for ${req.path}:`, {
+        errors: errors.array(),
+        body: req.body // Be careful with sensitive data, but needed for debug
+    });
+
     logSecurityEvent('input_validation_failed', {
         path: req.path,
         method: req.method,

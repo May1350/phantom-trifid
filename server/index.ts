@@ -85,6 +85,22 @@ app.get('/api/auth/google/login/direct', (req, res) => {
     res.redirect(authUrl);
 });
 
+// Session configuration with enhanced security
+app.use(session({
+    secret: config.session.secret,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        secure: config.session.secure, // true in production (HTTPS)
+        httpOnly: true,
+        sameSite: 'lax', // Changed from strict to lax for OAuth redirect support
+        maxAge: 1000 * 60 * 60 * 24 * 7 // 7 days
+    }
+}));
+
+// Extract accountId from session
+app.use(extractAccountId);
+
 // --- API ROUTES ---
 app.use('/api/auth', authRoutes);
 app.use('/api/auth/signup', signupLimiter, authSignupRoutes);
@@ -108,7 +124,8 @@ app.get('/api/debug-db', (req, res) => {
     }
 });
 
-// Serve static files AFTER API routes
+
+// Serve static files in production
 if (process.env.NODE_ENV === 'production') {
     const publicPath = path.join(__dirname, 'public');
     const fs = require('fs');
@@ -117,23 +134,6 @@ if (process.env.NODE_ENV === 'production') {
         app.use(express.static(publicPath));
     }
 }
-
-// Session configuration with enhanced security
-app.use(session({
-    secret: config.session.secret,
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-        secure: config.session.secure, // true in production (HTTPS)
-        httpOnly: true,
-        sameSite: 'lax', // Changed from strict to lax for OAuth redirect support
-        maxAge: 1000 * 60 * 60 * 24 * 7 // 7 days
-    }
-}));
-
-// Extract accountId from session
-app.use(extractAccountId);
-
 
 // Catch-all handle for React SPA in production
 if (process.env.NODE_ENV === 'production') {
@@ -201,6 +201,7 @@ scheduleDailyAlertCheck();
 const server = app.listen(PORT, '0.0.0.0', () => {
     logger.info(`Server is running on 0.0.0.0:${PORT}`);
     logger.info(`Environment: ${config.nodeEnv}`);
+    logger.info(`Frontend URL: ${config.frontend.url}`);
     logger.info(`Database path target: ${path.join(__dirname, 'database.json')}`);
 });
 
