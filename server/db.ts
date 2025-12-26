@@ -188,7 +188,7 @@ const initializeDBSync = () => {
                 const adminPassword = bcrypt.hashSync('1111', 10);
                 const agencyPassword = bcrypt.hashSync('1111', 10);
 
-                const defaultAccounts = [
+                const defaultAccounts: Account[] = [
                     {
                         id: 'admin',
                         name: 'System Administrator',

@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { body, validationResult, ValidationChain } from 'express-validator';
-import { logSecurityEvent } from '../utils/logger';
+import { logger, logSecurityEvent } from '../utils/logger';
 
 // Validation error handler
 export const validate = (req: Request, res: Response, next: NextFunction) => {
