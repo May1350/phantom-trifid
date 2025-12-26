@@ -67,7 +67,7 @@ app.use(session({
     cookie: {
         secure: config.session.secure, // true in production (HTTPS)
         httpOnly: true,
-        sameSite: 'strict',
+        sameSite: 'lax', // Changed from strict to lax for OAuth redirect support
         maxAge: 1000 * 60 * 60 * 24 * 7 // 7 days
     }
 }));

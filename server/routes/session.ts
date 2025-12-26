@@ -15,8 +15,12 @@ router.post('/login', authValidators.login, validate, async (req: any, res: any)
     }
 
     // Find account
+    const accounts = db.getAccounts();
+    logger.info(`Login attempt: email=${email}, total_accounts=${accounts.length}`);
+
     const account = db.getAccountByEmail(email);
     if (!account) {
+        logger.warn(`Login failed: Account not found for ${email}. Available emails: ${accounts.map(a => a.email).join(', ')}`);
         logSecurityEvent('login_failed', { email, reason: 'account_not_found', ip: req.ip });
         return res.status(401).json({ error: 'Invalid email or password' });
     }
@@ -24,6 +28,7 @@ router.post('/login', authValidators.login, validate, async (req: any, res: any)
     // Check password
     const isValid = await bcrypt.compare(password, account.password);
     if (!isValid) {
+        logger.warn(`Login failed: Password mismatch for ${email}`);
         logSecurityEvent('login_failed', { email, reason: 'invalid_password', ip: req.ip });
         return res.status(401).json({ error: 'Invalid email or password' });
     }

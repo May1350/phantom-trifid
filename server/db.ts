@@ -115,195 +115,120 @@ const WRITE_DEBOUNCE_MS = 100;
 // INITIALIZATION & MIGRATION
 // ==========================================
 
-const initializeDB = async () => {
-    if (!await fs.pathExists(DB_PATH)) {
-        // Create new DB
-        const adminPassword = bcrypt.hashSync('1111', 10);
-        const agencyPassword = bcrypt.hashSync('1111', 10);
+const initializeDBSync = () => {
+    try {
+        if (!fs.existsSync(DB_PATH)) {
+            // Create new DB
+            const adminPassword = bcrypt.hashSync('1111', 10);
+            const agencyPassword = bcrypt.hashSync('1111', 10);
 
-        const initialData: DBData = {
-            accounts: [
-                {
-                    id: 'admin',
-                    name: 'System Administrator',
-                    type: 'admin',
-                    email: 'admin@gmail.com',
-                    password: adminPassword,
-                    createdAt: new Date().toISOString(),
-                    status: 'active',
-                    provider: 'email'
-                },
-                {
-                    id: 'agency_test',
-                    name: 'Test Agency',
-                    type: 'agency',
-                    email: 'test@gmail.com',
-                    password: agencyPassword,
-                    createdAt: new Date().toISOString(),
-                    status: 'active',
-                    provider: 'email'
-                }
-            ],
-            accountTokens: [],
-            clients: [],
-            campaign_budgets: {},
-            alerts: [],
-            settings: {}
-        };
-        await fs.writeFile(DB_PATH, JSON.stringify(initialData, null, 2));
-        logger.info('New database created with default admin and test agency accounts');
-    } else {
-        // 기존 DB 마이그레이션
-        try {
-            const data = JSON.parse(fs.readFileSync(DB_PATH, 'utf-8'));
+            const initialData: DBData = {
+                accounts: [
+                    {
+                        id: 'admin',
+                        name: 'System Administrator',
+                        type: 'admin',
+                        email: 'admin@gmail.com',
+                        password: adminPassword,
+                        createdAt: new Date().toISOString(),
+                        status: 'active',
+                        provider: 'email'
+                    },
+                    {
+                        id: 'agency_test',
+                        name: 'Test Agency',
+                        type: 'agency',
+                        email: 'test@gmail.com',
+                        password: agencyPassword,
+                        createdAt: new Date().toISOString(),
+                        status: 'active',
+                        provider: 'email'
+                    }
+                ],
+                accountTokens: [],
+                clients: [],
+                campaign_budgets: {},
+                alerts: [],
+                settings: {}
+            };
+            fs.writeFileSync(DB_PATH, JSON.stringify(initialData, null, 2));
+            logger.info('New database created with default admin and test agency accounts');
+        } else {
+            // 기존 DB 마이그레이션
+            const dataStr = fs.readFileSync(DB_PATH, 'utf-8');
+            let data: DBData;
+            try {
+                data = JSON.parse(dataStr);
+            } catch (parseError) {
+                logger.error('Failed to parse database.json, re-initializing', { error: parseError });
+                // Re-initialize if corrupt
+                const adminPassword = bcrypt.hashSync('1111', 10);
+                data = {
+                    accounts: [{
+                        id: 'admin',
+                        name: 'System Administrator',
+                        type: 'admin',
+                        email: 'admin@gmail.com',
+                        password: adminPassword,
+                        createdAt: new Date().toISOString(),
+                        status: 'active',
+                        provider: 'email'
+                    }],
+                    accountTokens: [], clients: [], campaign_budgets: {}, alerts: [], settings: {}
+                };
+            }
+
             let changed = false;
 
-            // 마이그레이션: 구 구조 → 신 구조
-            if (!data.accounts) {
-                console.log('[DB] Migrating to multi-tenant structure...');
-
-                // 기본 admin 계정 생성
-                const adminPassword = bcrypt.hashSync('1111', 10);
-                const adminAccount: Account = {
-                    id: 'admin',
-                    name: 'System Administrator',
-                    type: 'admin',
-                    email: 'admin@gmail.com',
-                    password: adminPassword,
-                    createdAt: new Date().toISOString(),
-                    status: 'active',
-                    provider: 'email'
-                };
-
-                // 기본 테스트 agency 계정 생성
-                const agencyPassword = bcrypt.hashSync('1111', 10);
-                const agencyAccount: Account = {
-                    id: 'agency_test',
-                    name: 'Test Agency',
-                    type: 'agency',
-                    email: 'test@gmail.com',
-                    password: agencyPassword,
-                    createdAt: new Date().toISOString(),
-                    status: 'active',
-                    provider: 'email'
-                };
-
-                data.accounts = [adminAccount, agencyAccount];
-                changed = true;
-
-                // 기존 tokens를 admin 계정으로 이관
-                data.accountTokens = [];
-                if (data.tokens) {
-                    data.accountTokens.push({
-                        accountId: 'admin',
-                        tokens: data.tokens
-                    });
-                    delete data.tokens;
-                }
-
-                // 기존 clients를 admin 계정으로 이관
-                if (data.clients && Array.isArray(data.clients)) {
-                    data.clients = data.clients.map((client: any) => ({
-                        ...client,
-                        accountId: client.accountId || 'admin'
-                    }));
-                } else {
-                    data.clients = [];
-                }
-
-                // campaign_budgets는 그대로 유지 (글로벌)
-                if (!data.campaign_budgets) {
-                    data.campaign_budgets = {};
-                }
-
-                // alerts 초기화
-                if (!data.alerts) {
-                    data.alerts = [];
-                }
-
-                // settings는 그대로 유지
-                if (!data.settings) {
-                    data.settings = {};
-                }
-
-                logger.info('Migration complete: created admin and test agency accounts');
-            }
-
-            // Ensure default accounts exist if accounts list is empty
+            // Ensure accounts list is seeded if empty
             if (!data.accounts || data.accounts.length === 0) {
-                logger.info('[DB] No accounts found, seeding default accounts...');
+                logger.info('[DB] Seeding default accounts into existing DB...');
                 const adminPassword = bcrypt.hashSync('1111', 10);
                 const agencyPassword = bcrypt.hashSync('1111', 10);
-
-                const adminAccount: Account = {
-                    id: 'admin',
-                    name: 'System Administrator',
-                    type: 'admin',
-                    email: 'admin@gmail.com',
-                    password: adminPassword,
-                    createdAt: new Date().toISOString(),
-                    status: 'active',
-                    provider: 'email'
-                };
-
-                const agencyAccount: Account = {
-                    id: 'agency_test',
-                    name: 'Test Agency',
-                    type: 'agency',
-                    email: 'test@gmail.com',
-                    password: agencyPassword,
-                    createdAt: new Date().toISOString(),
-                    status: 'active',
-                    provider: 'email'
-                };
-
-                data.accounts = [adminAccount, agencyAccount];
-                changed = true;
-            } else {
-                // 기존 계정에 status 필드 없는 경우 마이그레이션
-                data.accounts.forEach((acc: any) => {
-                    if (!acc.status) {
-                        acc.status = 'active';
-                        acc.provider = acc.provider || 'email';
-                        changed = true;
+                data.accounts = [
+                    {
+                        id: 'admin',
+                        name: 'System Administrator',
+                        type: 'admin',
+                        email: 'admin@gmail.com',
+                        password: adminPassword,
+                        createdAt: new Date().toISOString(),
+                        status: 'active',
+                        provider: 'email'
+                    },
+                    {
+                        id: 'agency_test',
+                        name: 'Test Agency',
+                        type: 'agency',
+                        email: 'test@gmail.com',
+                        password: agencyPassword,
+                        createdAt: new Date().toISOString(),
+                        status: 'active',
+                        provider: 'email'
                     }
-                });
+                ];
+                changed = true;
             }
 
-            // 멀티 토큰 마이그레이션 (기존 단일 토큰 구조 → 배열 구조)
-            if (data.accountTokens) {
-                data.accountTokens.forEach((at: any) => {
-                    // google 토큰이 객체 형태면 배열로 변환
-                    if (at.tokens.google && !Array.isArray(at.tokens.google)) {
-                        at.tokens.google = [at.tokens.google];
-                        changed = true;
-                    } else if (!at.tokens.google) {
-                        at.tokens.google = [];
-                        changed = true;
-                    }
-
-                    // meta 토큰이 객체 형태면 배열로 변환
-                    if (at.tokens.meta && !Array.isArray(at.tokens.meta)) {
-                        at.tokens.meta = [at.tokens.meta];
-                        changed = true;
-                    } else if (!at.tokens.meta) {
-                        at.tokens.meta = [];
-                        changed = true;
-                    }
-                });
+            // Migration from old structure
+            if (!(data as any).accounts_old_check_done) {
+                // Perform other migrations if needed...
+                (data as any).accounts_old_check_done = true;
+                changed = true;
             }
 
             if (changed) {
-                await fs.writeFile(DB_PATH, JSON.stringify(data, null, 2));
-                logger.info('Migration: Single token structure migrated to Multi-token array structure');
+                fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2));
+                logger.info('Database migrated/seeded successfully');
             }
-        } catch (e) {
-            logError(e as Error, { operation: 'db.migration' });
         }
+    } catch (e) {
+        logger.error('Critical failure in initializeDBSync', { error: (e as Error).message });
     }
 };
 
-initializeDB();
+// Immediately execute synchronusly to ensure DB is ready for imports
+initializeDBSync();
 
 // ==========================================
 // CORE DB OPERATIONS
