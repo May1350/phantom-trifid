@@ -54,7 +54,7 @@ router.post('/', authValidators.signup, validate, async (req: any, res: any) => 
 // ==========================================
 router.get('/google/login', (req, res) => {
     const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
-    const REDIRECT_URI = 'http://localhost:3000/api/auth/google/login/callback';
+    const REDIRECT_URI = `${config.frontend.url}/api/auth/google/login/callback`;
 
     // Scope for Identity (Profile, Email) only
     const scope = [
@@ -71,7 +71,7 @@ router.get('/google/login/callback', async (req, res) => {
     const { code } = req.query;
     const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
     const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
-    const REDIRECT_URI = 'http://localhost:3000/api/auth/google/login/callback';
+    const REDIRECT_URI = `${config.frontend.url}/api/auth/google/login/callback`;
 
     if (!code) return res.status(400).send('No code provided');
 
@@ -131,7 +131,7 @@ router.get('/google/login/callback', async (req, res) => {
 
             // 5. Redirect to Auth Callback Page
             const encodedName = encodeURIComponent(account.name);
-            res.redirect(`http://localhost:3000/auth-callback?role=${account.type}&id=${account.id}&name=${encodedName}&email=${account.email}`);
+            res.redirect(`${config.frontend.url}/settings?status=success`);
         } else {
             res.status(500).send('Account creation failed');
         }

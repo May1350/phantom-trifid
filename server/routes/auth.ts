@@ -43,7 +43,7 @@ router.post('/disconnect', (req: Request, res: Response) => {
 // Google OAuth
 router.get('/google', (req: Request, res: Response) => {
     const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
-    const REDIRECT_URI = 'http://localhost:3000/api/auth/google/callback';
+    const REDIRECT_URI = `${config.frontend.url}/api/auth/google/callback`;
     const accountId = req.accountId;
 
     if (!accountId) return res.status(401).send('Unauthorized');
@@ -70,7 +70,7 @@ router.get('/google/callback', async (req: Request, res: Response) => {
     const { code } = req.query;
     const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
     const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
-    const REDIRECT_URI = 'http://localhost:3000/api/auth/google/callback';
+    const REDIRECT_URI = `${config.frontend.url}/api/auth/google/callback`;
 
     if (!code) return res.status(400).send('No code provided');
 
@@ -99,8 +99,8 @@ router.get('/google/callback', async (req: Request, res: Response) => {
             name
         });
 
-        // Redirect back to settings on the FRONTEND port (3000)
-        res.redirect(`http://localhost:3000/settings?status=success`);
+        // Redirect back to settings on the FRONTEND
+        res.redirect(`${config.frontend.url}/settings?status=success`);
     } catch (error: any) {
         logger.error('Google OAuth Error:', {
             message: error.message,
@@ -114,7 +114,7 @@ router.get('/google/callback', async (req: Request, res: Response) => {
 // Meta OAuth
 router.get('/meta', (req: Request, res: Response) => {
     const META_CLIENT_ID = process.env.META_CLIENT_ID;
-    const REDIRECT_URI = 'http://localhost:3000/api/auth/meta/callback';
+    const REDIRECT_URI = `${config.frontend.url}/api/auth/meta/callback`;
     const accountId = req.accountId;
 
     if (!accountId) return res.status(401).send('Unauthorized');
@@ -135,7 +135,7 @@ router.get('/meta/callback', async (req: Request, res: Response) => {
     const { code } = req.query;
     const META_CLIENT_ID = process.env.META_CLIENT_ID;
     const META_CLIENT_SECRET = process.env.META_CLIENT_SECRET;
-    const REDIRECT_URI = 'http://localhost:3000/api/auth/meta/callback';
+    const REDIRECT_URI = `${config.frontend.url}/api/auth/meta/callback`;
 
     if (!code) return res.status(400).send('No code provided');
 

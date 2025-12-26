@@ -118,8 +118,32 @@ const WRITE_DEBOUNCE_MS = 100;
 const initializeDB = async () => {
     if (!await fs.pathExists(DB_PATH)) {
         // Create new DB
+        const adminPassword = bcrypt.hashSync('1111', 10);
+        const agencyPassword = bcrypt.hashSync('1111', 10);
+
         const initialData: DBData = {
-            accounts: [],
+            accounts: [
+                {
+                    id: 'admin',
+                    name: 'System Administrator',
+                    type: 'admin',
+                    email: 'admin@gmail.com',
+                    password: adminPassword,
+                    createdAt: new Date().toISOString(),
+                    status: 'active',
+                    provider: 'email'
+                },
+                {
+                    id: 'agency_test',
+                    name: 'Test Agency',
+                    type: 'agency',
+                    email: 'test@gmail.com',
+                    password: agencyPassword,
+                    createdAt: new Date().toISOString(),
+                    status: 'active',
+                    provider: 'email'
+                }
+            ],
             accountTokens: [],
             clients: [],
             campaign_budgets: {},
@@ -127,7 +151,7 @@ const initializeDB = async () => {
             settings: {}
         };
         await fs.writeFile(DB_PATH, JSON.stringify(initialData, null, 2));
-        logger.info('New database created');
+        logger.info('New database created with default admin and test agency accounts');
     } else {
         // 기존 DB 마이그레이션
         try {
