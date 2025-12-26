@@ -121,10 +121,10 @@ export const LandingPage: React.FC = () => {
                                     <span>System_v1.0.core</span>
                                     <span>Status: Operational</span>
                                 </div>
-                                <div>> initializing_engine... [ok]</div>
-                                <div>> fetching_meta_api_stream... [ok]</div>
-                                <div>> parsing_google_ads_data... [ok]</div>
-                                <div>> optimizing_budget_projection... [ok]</div>
+                                <div>{'>'} initializing_engine... [ok]</div>
+                                <div>{'>'} fetching_meta_api_stream... [ok]</div>
+                                <div>{'>'} parsing_google_ads_data... [ok]</div>
+                                <div>{'>'} optimizing_budget_projection... [ok]</div>
                                 <div className="pt-4 text-white/20">////////////////////////////////////////</div>
                                 <div className="pt-2 text-white/60">PHANTOM_TRIFID_ACTIVE</div>
                             </div>
