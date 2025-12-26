@@ -47,7 +47,44 @@ app.use(cors({
 
 app.use(express.json());
 
-// --- API ROUTES FIRST ---
+// --- DIRECT DEBUG ROUTES TO BYPASS ROUTERS ---
+app.get('/api/ping', (req, res) => res.json({ pong: true, timestamp: new Date().toISOString() }));
+
+app.get('/api/debug-env', (req, res) => {
+    res.json({
+        NODE_ENV: process.env.NODE_ENV,
+        FRONTEND_URL: process.env.FRONTEND_URL,
+        PORT: process.env.PORT,
+        __dirname: __dirname,
+        cwd: process.cwd(),
+        db_exists: require('fs').existsSync(path.join(__dirname, 'database.json')),
+        dist_exists: require('fs').existsSync(path.join(__dirname, 'dist'))
+    });
+});
+
+app.get('/api/debug-db-direct', (req, res) => {
+    try {
+        const data = db.read();
+        res.json({
+            accounts_count: data.accounts.length,
+            emails: data.accounts.map(a => a.email),
+            sample_admin: data.accounts.find(a => a.id === 'admin') ? 'Found' : 'Not Found'
+        });
+    } catch (e: any) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// Re-register Google login DIRECTLY on app for visibility
+app.get('/api/auth/google/login/direct', (req, res) => {
+    const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+    const REDIRECT_URI = `${config.frontend.url}/api/auth/google/login/callback`;
+    const scope = ['https://www.googleapis.com/auth/userinfo.profile', 'https://www.googleapis.com/auth/userinfo.email'].join(' ');
+    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=${scope}&access_type=online&prompt=select_account`;
+    res.redirect(authUrl);
+});
+
+// --- API ROUTES ---
 app.use('/api/auth', authRoutes);
 app.use('/api/auth/signup', signupLimiter, authSignupRoutes);
 app.use('/api/session', authLimiter, sessionRoutes);
