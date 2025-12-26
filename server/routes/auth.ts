@@ -187,6 +187,8 @@ router.get('/google/login', (req, res) => {
     const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
     const REDIRECT_URI = `${config.frontend.url}/api/auth/google/login/callback`;
 
+    logger.info(`Initiating Google Login Redirect: REDIRECT_URI=${REDIRECT_URI}`);
+
     const scope = [
         'https://www.googleapis.com/auth/userinfo.profile',
         'https://www.googleapis.com/auth/userinfo.email'

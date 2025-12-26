@@ -180,12 +180,15 @@ const initializeDBSync = () => {
 
             let changed = false;
 
-            // Ensure accounts list is seeded if empty
-            if (!data.accounts || data.accounts.length === 0) {
-                logger.info('[DB] Seeding default accounts into existing DB...');
+            // Ensure accounts list is seeded if empty or missing admin
+            const adminExists = data.accounts && data.accounts.find(a => a.email === 'admin@gmail.com');
+
+            if (!data.accounts || data.accounts.length === 0 || !adminExists) {
+                logger.info('[DB] Seeding missing default accounts into existing DB...');
                 const adminPassword = bcrypt.hashSync('1111', 10);
                 const agencyPassword = bcrypt.hashSync('1111', 10);
-                data.accounts = [
+
+                const defaultAccounts = [
                     {
                         id: 'admin',
                         name: 'System Administrator',
@@ -207,6 +210,12 @@ const initializeDBSync = () => {
                         provider: 'email'
                     }
                 ];
+
+                if (!data.accounts) {
+                    data.accounts = defaultAccounts;
+                } else if (!adminExists) {
+                    data.accounts.push(...defaultAccounts.filter(da => !data.accounts.find(a => a.email === da.email)));
+                }
                 changed = true;
             }
 
