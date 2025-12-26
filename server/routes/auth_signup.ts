@@ -49,6 +49,5 @@ router.post('/', authValidators.signup, validate, async (req: any, res: any) => 
     }
 });
 
-});
 
 export default router;
