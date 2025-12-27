@@ -40,18 +40,38 @@ export const ActivityLogViewer: React.FC = () => {
         fetchLogs();
     }, [date]);
 
+    const [showErrorsOnly, setShowErrorsOnly] = useState(false);
+
+    const logsToDisplay = showErrorsOnly
+        ? logs.filter(log => log.level === 'error')
+        : logs;
+
     return (
         <div className="space-y-4">
             {/* Toolbar */}
             <div className="flex items-center justify-between bg-gray-50 p-4 border border-black">
-                <div className="flex items-center gap-4">
-                    <label className="font-mono text-sm font-bold uppercase">Date:</label>
-                    <input
-                        type="date"
-                        value={date}
-                        onChange={(e) => setDate(e.target.value)}
-                        className="border border-gray-300 px-2 py-1 font-mono text-sm"
-                    />
+                <div className="flex items-center gap-6">
+                    <div className="flex items-center gap-2">
+                        <label className="font-mono text-sm font-bold uppercase">Date:</label>
+                        <input
+                            type="date"
+                            value={date}
+                            onChange={(e) => setDate(e.target.value)}
+                            className="border border-gray-300 px-2 py-1 font-mono text-sm"
+                        />
+                    </div>
+
+                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                        <input
+                            type="checkbox"
+                            checked={showErrorsOnly}
+                            onChange={e => setShowErrorsOnly(e.target.checked)}
+                            className="w-4 h-4 text-red-600 focus:ring-red-500 border-gray-300 rounded"
+                        />
+                        <span className={`font-mono text-sm uppercase font-bold ${showErrorsOnly ? 'text-red-600' : 'text-gray-500'}`}>
+                            Show Errors Only
+                        </span>
+                    </label>
                 </div>
                 <Button onClick={fetchLogs} disabled={loading} variant="outline" size="sm">
                     {loading ? 'LOADING...' : 'REFRESH LOGS'}
@@ -78,22 +98,23 @@ export const ActivityLogViewer: React.FC = () => {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200">
-                        {logs.length === 0 && !loading ? (
+                        {logsToDisplay.length === 0 && !loading ? (
                             <tr>
                                 <td colSpan={5} className="px-4 py-8 text-center text-gray-400 italic">
-                                    No activity logs found for this date.
+                                    {showErrorsOnly ? 'No error logs found.' : 'No activity logs found for this date.'}
                                 </td>
                             </tr>
                         ) : (
-                            logs.map((log, index) => (
-                                <tr key={index} className="hover:bg-gray-50">
+                            logsToDisplay.map((log, index) => (
+                                <tr key={index} className={`hover:bg-gray-50 transition-colors ${log.level === 'error' ? 'bg-red-50 border-l-4 border-red-500' : 'border-l-4 border-transparent'
+                                    }`}>
                                     <td className="px-4 py-2 whitespace-nowrap text-gray-500">
                                         {log.timestamp.split(' ')[1]}
                                     </td>
                                     <td className="px-4 py-2">
                                         <span className={`px-2 py-0.5 text-xs font-bold rounded ${log.level === 'error' ? 'bg-red-100 text-red-800' :
-                                                log.level === 'warn' ? 'bg-yellow-100 text-yellow-800' :
-                                                    'bg-blue-50 text-blue-800'
+                                            log.level === 'warn' ? 'bg-yellow-100 text-yellow-800' :
+                                                'bg-blue-50 text-blue-800'
                                             }`}>
                                             {log.level.toUpperCase()}
                                         </span>
