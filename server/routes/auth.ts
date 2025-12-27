@@ -7,6 +7,22 @@ import bcrypt from 'bcrypt';
 
 const router = Router();
 
+// Helper to get the correct base URL for redirects
+const getBaseUrl = (req: Request) => {
+    // Priority 1: Environment variable
+    if (process.env.FRONTEND_URL) return process.env.FRONTEND_URL;
+
+    // Priority 2: Current request (for production automatic detection)
+    const host = req.get('host');
+    const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+    if (host && !host.includes('localhost')) {
+        return `${protocol}://${host}`;
+    }
+
+    // Priority 3: Config fallback (usually localhost)
+    return config.frontend.url;
+};
+
 // Check connection status
 router.get('/status', (req: Request, res: Response) => {
     const accountId = req.accountId;
@@ -45,7 +61,7 @@ router.post('/disconnect', (req: Request, res: Response) => {
 // Google OAuth
 router.get('/google', (req: Request, res: Response) => {
     const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
-    const REDIRECT_URI = `${config.frontend.url}/api/auth/google/callback`;
+    const REDIRECT_URI = `${getBaseUrl(req)}/api/auth/google/callback`;
     const accountId = req.accountId;
 
     if (!accountId) return res.status(401).send('Unauthorized');
@@ -72,7 +88,7 @@ router.get('/google/callback', async (req: Request, res: Response) => {
     const { code } = req.query;
     const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
     const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
-    const REDIRECT_URI = `${config.frontend.url}/api/auth/google/callback`;
+    const REDIRECT_URI = `${getBaseUrl(req)}/api/auth/google/callback`;
 
     if (!code) return res.status(400).send('No code provided');
 
@@ -102,7 +118,7 @@ router.get('/google/callback', async (req: Request, res: Response) => {
         });
 
         // Redirect back to settings on the FRONTEND
-        res.redirect(`${config.frontend.url}/settings?status=success`);
+        res.redirect(`${getBaseUrl(req)}/settings?status=success`);
     } catch (error: any) {
         logger.error('Google OAuth Error:', {
             message: error.message,
@@ -116,7 +132,7 @@ router.get('/google/callback', async (req: Request, res: Response) => {
 // Meta OAuth
 router.get('/meta', (req: Request, res: Response) => {
     const META_CLIENT_ID = process.env.META_CLIENT_ID;
-    const REDIRECT_URI = `${config.frontend.url}/api/auth/meta/callback`;
+    const REDIRECT_URI = `${getBaseUrl(req)}/api/auth/meta/callback`;
     const accountId = req.accountId;
 
     if (!accountId) return res.status(401).send('Unauthorized');
@@ -137,7 +153,7 @@ router.get('/meta/callback', async (req: Request, res: Response) => {
     const { code } = req.query;
     const META_CLIENT_ID = process.env.META_CLIENT_ID;
     const META_CLIENT_SECRET = process.env.META_CLIENT_SECRET;
-    const REDIRECT_URI = `${config.frontend.url}/api/auth/meta/callback`;
+    const REDIRECT_URI = `${getBaseUrl(req)}/api/auth/meta/callback`;
 
     if (!code) return res.status(400).send('No code provided');
 
@@ -168,7 +184,7 @@ router.get('/meta/callback', async (req: Request, res: Response) => {
             name
         });
 
-        res.redirect(`http://localhost:3000/settings?status=success`);
+        res.redirect(`${config.frontend.url}/settings?status=success`);
     } catch (error: any) {
         logger.error('Meta OAuth Error:', {
             message: error.message,
@@ -185,7 +201,7 @@ router.get('/meta/callback', async (req: Request, res: Response) => {
 // This is used for logging in via Google, separate from connecting an ads account.
 router.get('/google/login', (req, res) => {
     const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
-    const REDIRECT_URI = `${config.frontend.url}/api/auth/google/login/callback`;
+    const REDIRECT_URI = `${getBaseUrl(req)}/api/auth/google/login/callback`;
 
     logger.info(`Initiating Google Login Redirect: REDIRECT_URI=${REDIRECT_URI}`);
 
@@ -203,7 +219,7 @@ router.get('/google/login/callback', async (req, res) => {
     const { code } = req.query;
     const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
     const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
-    const REDIRECT_URI = `${config.frontend.url}/api/auth/google/login/callback`;
+    const REDIRECT_URI = `${getBaseUrl(req)}/api/auth/google/login/callback`;
 
     if (!code) return res.status(400).send('No code provided');
 
@@ -249,7 +265,7 @@ router.get('/google/login/callback', async (req, res) => {
 
             // Redirect to frontend auth-callback to handle role-based navigation
             const encodedName = encodeURIComponent(account.name);
-            res.redirect(`${config.frontend.url}/auth-callback?role=${account.type}&id=${account.id}&name=${encodedName}&email=${account.email}`);
+            res.redirect(`${getBaseUrl(req)}/auth-callback?role=${account.type}&id=${account.id}&name=${encodedName}&email=${account.email}`);
         } else {
             res.status(500).send('Account creation failed');
         }

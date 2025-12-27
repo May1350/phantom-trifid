@@ -8,7 +8,8 @@ const requiredEnvVars = [
     'GOOGLE_CLIENT_ID',
     'GOOGLE_CLIENT_SECRET',
     'META_CLIENT_ID',
-    'META_CLIENT_SECRET'
+    'META_CLIENT_SECRET',
+    'FRONTEND_URL'
 ];
 
 // Validate required environment variables
