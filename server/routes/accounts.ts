@@ -1,7 +1,8 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import { db } from '../db';
 import { requireAdmin } from '../middleware/auth';
+import { accountValidators, validate } from '../middleware/validator';
 
 const router = Router();
 
@@ -68,7 +69,7 @@ router.get('/:id/stats', requireAdmin, (req, res) => {
 });
 
 // 새 계정 생성 (관리자 전용)
-router.post('/', requireAdmin, async (req, res) => {
+router.post('/', requireAdmin, accountValidators.create, validate, async (req: Request, res: Response) => {
     const { id, name, type, email, password } = req.body;
 
     // 필수 필드 확인
@@ -103,7 +104,7 @@ router.post('/', requireAdmin, async (req, res) => {
 });
 
 // 계정 정보 수정 (관리자 전용)
-router.put('/:id', requireAdmin, async (req, res) => {
+router.put('/:id', requireAdmin, accountValidators.update, validate, async (req: Request, res: Response) => {
     const { id } = req.params;
     const { name, email, password, status, type } = req.body;
 

@@ -3,6 +3,8 @@ import axios from 'axios';
 import { db } from '../db';
 import { logger, logAuthEvent, logSecurityEvent } from '../utils/logger';
 import { config } from '../config/env';
+import { authValidators, validate } from '../middleware/validator';
+import { authLimiter } from '../middleware/rateLimiter';
 import bcrypt from 'bcrypt';
 
 const router = Router();
@@ -45,7 +47,7 @@ router.get('/status', (req: Request, res: Response) => {
 });
 
 // Disconnect
-router.post('/disconnect', (req: Request, res: Response) => {
+router.post('/disconnect', authLimiter, authValidators.disconnect, validate, (req: Request, res: Response) => {
     const { platform, email } = req.body;
     const accountId = req.accountId;
     if (!accountId) return res.status(401).json({ error: 'Unauthorized' });
@@ -59,7 +61,7 @@ router.post('/disconnect', (req: Request, res: Response) => {
 });
 
 // Google OAuth
-router.get('/google', (req: Request, res: Response) => {
+router.get('/google', authLimiter, (req: Request, res: Response) => {
     const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
     const REDIRECT_URI = `${getBaseUrl(req)}/api/auth/google/callback`;
     const accountId = req.accountId;
@@ -130,7 +132,7 @@ router.get('/google/callback', async (req: Request, res: Response) => {
 });
 
 // Meta OAuth
-router.get('/meta', (req: Request, res: Response) => {
+router.get('/meta', authLimiter, (req: Request, res: Response) => {
     const META_CLIENT_ID = process.env.META_CLIENT_ID;
     const REDIRECT_URI = `${getBaseUrl(req)}/api/auth/meta/callback`;
     const accountId = req.accountId;
@@ -199,7 +201,7 @@ router.get('/meta/callback', async (req: Request, res: Response) => {
 // GOOGLE LOGIN (IDENTITY)
 // ==========================================
 // This is used for logging in via Google, separate from connecting an ads account.
-router.get('/google/login', (req, res) => {
+router.get('/google/login', authLimiter, (req, res) => {
     const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
     const REDIRECT_URI = `${getBaseUrl(req)}/api/auth/google/login/callback`;
 
@@ -307,7 +309,7 @@ router.get('/google/login/callback', async (req, res) => {
 // ==========================================
 // GOOGLE SIGNUP (NEW ACCOUNTS)
 // ==========================================
-router.get('/google/signup', (req, res) => {
+router.get('/google/signup', authLimiter, (req, res) => {
     const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
     // Use same callback as login, but with mode=signup in state
     const REDIRECT_URI = `${getBaseUrl(req)}/api/auth/google/login/callback`;

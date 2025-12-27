@@ -37,8 +37,22 @@ app.get('/health', (req, res) => {
 });
 
 // Security headers
+// Security headers
 app.use(helmet({
-    contentSecurityPolicy: false // Loosen CSP for initial deployment stability
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://accounts.google.com", "https://connect.facebook.net", "https://www.googletagmanager.com"],
+            styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+            imgSrc: ["'self'", "data:", "https://lh3.googleusercontent.com", "https://platform-lookaside.fbsbx.com", "https://*.google.com"],
+            fontSrc: ["'self'", "https://fonts.gstatic.com"],
+            frameSrc: ["'self'", "https://accounts.google.com"],
+            connectSrc: ["'self'", "https://accounts.google.com", "https://www.googleapis.com", "https://graph.facebook.com"],
+            objectSrc: ["'none'"],
+            upgradeInsecureRequests: []
+        }
+    },
+    crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" } // Important for Google OAuth popups
 }));
 
 // Dynamic CORS configuration
