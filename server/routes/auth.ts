@@ -259,7 +259,8 @@ router.get('/google/login/callback', async (req, res) => {
 
         if (account) {
             // Check account status before creating session
-            if (account.status !== 'active') {
+            // Treat undefined status as 'active' for legacy accounts
+            if (account.status && account.status !== 'active') {
                 logger.warn(`Google login blocked: Account ${account.email} is ${account.status}`);
                 return res.redirect(`${getBaseUrl(req)}/login?error=account_${account.status}`);
             }

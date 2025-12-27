@@ -34,7 +34,8 @@ router.post('/login', authValidators.login, validate, async (req: any, res: any)
     }
 
     // Check account status
-    if (account.status !== 'active') {
+    // Treat undefined as active
+    if (account.status && account.status !== 'active') {
         logSecurityEvent('login_blocked', { email, status: account.status, ip: req.ip });
         return res.status(403).json({ error: 'Account is not active. Please contact support.' });
     }
@@ -96,7 +97,8 @@ router.get('/current', (req, res) => {
     }
 
     // Enforce status check for existing sessions
-    if (account.status !== 'active') {
+    // Treat undefined as active
+    if (account.status && account.status !== 'active') {
         return res.status(403).json({ error: 'Account not active', status: account.status });
     }
 

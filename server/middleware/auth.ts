@@ -33,7 +33,8 @@ export const requireActive = (req: Request, res: Response, next: NextFunction) =
         return res.status(401).json({ error: 'Unauthorized: Login required' });
     }
 
-    if (req.accountStatus !== 'active') {
+    // Treat undefined status as 'active' for legacy compatibility
+    if (req.accountStatus && req.accountStatus !== 'active') {
         const message = req.accountStatus === 'pending'
             ? 'Your account is pending approval by an administrator.'
             : 'Your account has been suspended.';
