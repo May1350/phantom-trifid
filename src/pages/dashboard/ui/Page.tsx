@@ -116,7 +116,8 @@ export const DashboardPage: React.FC = () => {
     const { totalSpend, totalBudget } = useMemo(() => {
         return campaigns.reduce((acc, camp) => ({
             totalSpend: acc.totalSpend + camp.spend,
-            totalBudget: acc.totalBudget + camp.budget
+            // Only sum up budget if it is a custom set budget, otherwise 0
+            totalBudget: acc.totalBudget + (camp.hasCustomBudget ? camp.budget : 0)
         }), { totalSpend: 0, totalBudget: 0 });
     }, [campaigns]);
 
