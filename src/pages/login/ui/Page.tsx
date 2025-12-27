@@ -1,10 +1,29 @@
-import React from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { LoginForm } from '../../../features/auth/ui/LoginForm';
 import { storage } from '../../../shared/lib/storage';
 
 export const LoginPage: React.FC = () => {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const [errorMessage, setErrorMessage] = useState('');
+
+    useEffect(() => {
+        const error = searchParams.get('error');
+        const email = searchParams.get('email');
+
+        if (error === 'not_registered') {
+            setErrorMessage(
+                email
+                    ? `Account ${email} is not registered. Please sign up first.`
+                    : 'This account is not registered. Please sign up first.'
+            );
+        } else if (error === 'account_pending') {
+            setErrorMessage('Your account is pending approval by an administrator.');
+        } else if (error === 'account_suspended') {
+            setErrorMessage('Your account has been suspended. Please contact support.');
+        }
+    }, [searchParams]);
 
     const handleLogin = (role: 'admin' | 'agency', accountInfo: any) => {
         storage.set('user_role', role);
@@ -34,6 +53,31 @@ export const LoginPage: React.FC = () => {
                         Budget Management System v1.0
                     </p>
                 </div>
+
+                {/* Error Message */}
+                {errorMessage && (
+                    <div className="mb-6 bg-red-50 border-2 border-red-500 p-4">
+                        <div className="flex items-start gap-3">
+                            <span className="text-red-500 font-bold text-xl">⚠</span>
+                            <div className="flex-1">
+                                <p className="font-bold uppercase text-red-700 text-sm mb-1">
+                                    Account Error
+                                </p>
+                                <p className="text-red-600 text-sm mb-3">
+                                    {errorMessage}
+                                </p>
+                                {searchParams.get('error') === 'not_registered' && (
+                                    <Link
+                                        to="/signup"
+                                        className="inline-block bg-red-500 text-white px-4 py-2 text-xs font-bold uppercase hover:bg-red-600 transition-colors"
+                                    >
+                                        Create Account →
+                                    </Link>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 <LoginForm onLogin={handleLogin} />
 
