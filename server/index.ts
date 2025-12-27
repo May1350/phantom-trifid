@@ -74,8 +74,15 @@ app.get('/api/debug-db-direct', (req, res) => {
         const data = db.read();
         res.json({
             accounts_count: data.accounts.length,
-            emails: data.accounts.map((a: any) => a.email),
-            sample_admin: data.accounts.find((a: any) => a.id === 'admin') ? 'Found' : 'Not Found'
+            accounts: data.accounts.map((a: any) => ({
+                id: a.id,
+                email: a.email,
+                name: a.name,
+                type: a.type,
+                status: a.status,
+                provider: a.provider,
+                createdAt: a.createdAt
+            }))
         });
     } catch (e: any) {
         res.status(500).json({ error: e.message });
