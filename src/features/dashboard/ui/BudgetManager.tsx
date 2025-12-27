@@ -330,15 +330,26 @@ export const BudgetManager: React.FC<BudgetManagerProps> = ({ isOpen, onClose, c
                                         placeholder="0"
                                         className="w-full border border-black p-2 font-mono text-sm focus:outline-none focus:ring-1 focus:ring-black mb-2"
                                     />
-                                    {recAmount > 0 && commission && (
-                                        <div className="bg-blue-50 border border-blue-500 p-2 text-[11px] font-mono flex justify-between">
-                                            <span className="uppercase text-blue-700">Estimated Ad Budget (Net)</span>
-                                            <span className="font-bold">
-                                                ¥{Math.round(commission.type === 'percentage'
-                                                    ? recAmount * (1 - commission.value / 100)
-                                                    : recAmount - commission.value
-                                                ).toLocaleString()}
-                                            </span>
+                                    {recAmount > 0 && (
+                                        <div className={`${commission ? 'bg-blue-50 border-blue-500' : 'bg-yellow-50 border-yellow-500'} border p-2 text-[11px] font-mono`}>
+                                            <div className="flex justify-between mb-1">
+                                                <span className={`uppercase ${commission ? 'text-blue-700' : 'text-yellow-700'}`}>Estimated Ad Budget (Net)</span>
+                                                <span className="font-bold">
+                                                    {commission ? (
+                                                        `¥${Math.round(commission.type === 'percentage'
+                                                            ? recAmount * (1 - commission.value / 100)
+                                                            : recAmount - commission.value
+                                                        ).toLocaleString()}`
+                                                    ) : (
+                                                        `¥${recAmount.toLocaleString()}`
+                                                    )}
+                                                </span>
+                                            </div>
+                                            {!commission && (
+                                                <div className="text-[10px] text-yellow-700 mt-1">
+                                                    ⚠ Commission not set for this client
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                 </div>
@@ -374,15 +385,26 @@ export const BudgetManager: React.FC<BudgetManagerProps> = ({ isOpen, onClose, c
                                         placeholder="0"
                                         className="w-full border border-black p-2 font-mono text-sm focus:outline-none focus:ring-1 focus:ring-black mb-2"
                                     />
-                                    {fixAmount > 0 && commission && (
-                                        <div className="bg-blue-50 border border-blue-500 p-2 text-[11px] font-mono flex justify-between">
-                                            <span className="uppercase text-blue-700">Estimated Ad Budget (Net)</span>
-                                            <span className="font-bold">
-                                                ¥{Math.round(commission.type === 'percentage'
-                                                    ? fixAmount * (1 - commission.value / 100)
-                                                    : fixAmount - commission.value
-                                                ).toLocaleString()}
-                                            </span>
+                                    {fixAmount > 0 && (
+                                        <div className={`${commission ? 'bg-blue-50 border-blue-500' : 'bg-yellow-50 border-yellow-500'} border p-2 text-[11px] font-mono`}>
+                                            <div className="flex justify-between mb-1">
+                                                <span className={`uppercase ${commission ? 'text-blue-700' : 'text-yellow-700'}`}>Estimated Ad Budget (Net)</span>
+                                                <span className="font-bold">
+                                                    {commission ? (
+                                                        `¥${Math.round(commission.type === 'percentage'
+                                                            ? fixAmount * (1 - commission.value / 100)
+                                                            : fixAmount - commission.value
+                                                        ).toLocaleString()}`
+                                                    ) : (
+                                                        `¥${fixAmount.toLocaleString()}`
+                                                    )}
+                                                </span>
+                                            </div>
+                                            {!commission && (
+                                                <div className="text-[10px] text-yellow-700 mt-1">
+                                                    ⚠ Commission not set for this client
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                 </div>
