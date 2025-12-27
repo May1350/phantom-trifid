@@ -326,7 +326,7 @@ export const BudgetManager: React.FC<BudgetManagerProps> = ({ isOpen, onClose, c
                                     <input
                                         type="number"
                                         value={recAmount || ''}
-                                        onChange={(e) => setRecAmount(parseFloat(e.target.value))}
+                                        onChange={(e) => setRecAmount(parseFloat(e.target.value) || 0)}
                                         placeholder="0"
                                         className="w-full border border-black p-2 font-mono text-sm focus:outline-none focus:ring-1 focus:ring-black mb-2"
                                     />
@@ -370,7 +370,7 @@ export const BudgetManager: React.FC<BudgetManagerProps> = ({ isOpen, onClose, c
                                     <input
                                         type="number"
                                         value={fixAmount || ''}
-                                        onChange={(e) => setFixAmount(parseFloat(e.target.value))}
+                                        onChange={(e) => setFixAmount(parseFloat(e.target.value) || 0)}
                                         placeholder="0"
                                         className="w-full border border-black p-2 font-mono text-sm focus:outline-none focus:ring-1 focus:ring-black mb-2"
                                     />
