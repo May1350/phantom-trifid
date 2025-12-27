@@ -67,9 +67,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
                 </Button>
             </div>
 
-            <div className="flex justify-between text-xs text-gray-400 font-mono pt-2">
+            <div className="flex justify-center text-xs text-gray-400 font-mono pt-2">
                 <a href="#" className="hover:text-black hover:underline uppercase">Reset Password</a>
-                <a href="#" className="hover:text-black hover:underline uppercase">Contact Admin</a>
             </div>
         </form>
     );
