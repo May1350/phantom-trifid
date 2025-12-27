@@ -240,42 +240,29 @@ router.get('/google/login/callback', async (req, res) => {
 
         let account = db.getAccountByEmail(email);
 
+        // If account doesn't exist, redirect to signup page
         if (!account) {
-            const newAccountId = `user_${Date.now()}`;
-            const randomPassword = await bcrypt.hash(Math.random().toString(36), 10);
-
-            db.createAccount({
-                id: newAccountId,
-                name: name,
-                email: email,
-                password: randomPassword,
-                type: 'agency',
-                status: 'pending',
-                provider: 'google'
-            });
-
-            account = db.getAccount(newAccountId);
+            logger.info(`Google login attempted with unregistered email: ${email}`);
+            const encodedEmail = encodeURIComponent(email);
+            const encodedName = encodeURIComponent(name);
+            return res.redirect(`${getBaseUrl(req)}/signup?provider=google&email=${encodedEmail}&name=${encodedName}`);
         }
 
-        if (account) {
-            // Check account status before creating session
-            // Treat undefined status as 'active' for legacy accounts
-            if (account.status && account.status !== 'active') {
-                logger.warn(`Google login blocked: Account ${account.email} is ${account.status}`);
-                return res.redirect(`${getBaseUrl(req)}/login?error=account_${account.status}`);
-            }
-
-            if (req.session) {
-                (req.session as any).accountId = account.id;
-                (req.session as any).accountType = account.type;
-            }
-
-            // Redirect to frontend auth-callback to handle role-based navigation
-            const encodedName = encodeURIComponent(account.name);
-            res.redirect(`${getBaseUrl(req)}/auth-callback?role=${account.type}&id=${account.id}&name=${encodedName}&email=${account.email}`);
-        } else {
-            res.status(500).send('Account creation failed');
+        // Check account status before creating session
+        // Treat undefined status as 'active' for legacy accounts
+        if (account.status && account.status !== 'active') {
+            logger.warn(`Google login blocked: Account ${account.email} is ${account.status}`);
+            return res.redirect(`${getBaseUrl(req)}/login?error=account_${account.status}`);
         }
+
+        if (req.session) {
+            (req.session as any).accountId = account.id;
+            (req.session as any).accountType = account.type;
+        }
+
+        // Redirect to frontend auth-callback to handle role-based navigation
+        const encodedName = encodeURIComponent(account.name);
+        res.redirect(`${getBaseUrl(req)}/auth-callback?role=${account.type}&id=${account.id}&name=${encodedName}&email=${account.email}`);
 
     } catch (error: any) {
         logger.error('Error in Google Login Callback:', {
