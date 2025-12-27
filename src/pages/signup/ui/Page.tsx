@@ -50,7 +50,7 @@ export const SignupPage: React.FC = () => {
     };
 
     const handleGoogleSignup = () => {
-        window.location.href = '/api/auth/google/login';
+        window.location.href = '/api/auth/google/signup';
     };
 
     return (
