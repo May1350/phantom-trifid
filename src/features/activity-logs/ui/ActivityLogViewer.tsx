@@ -73,7 +73,7 @@ export const ActivityLogViewer: React.FC = () => {
                         </span>
                     </label>
                 </div>
-                <Button onClick={fetchLogs} disabled={loading} variant="outline" size="sm">
+                <Button onClick={fetchLogs} disabled={loading} variant="outline" className="!py-1 !px-3 !text-xs">
                     {loading ? 'LOADING...' : 'REFRESH LOGS'}
                 </Button>
             </div>
