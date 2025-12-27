@@ -259,7 +259,9 @@ export const CampaignTable: React.FC<CampaignTableProps> = ({ campaigns, loading
                                             <div className="col-span-4 flex flex-col font-mono text-xs border-l border-gray-300 pl-4 group-hover:border-gray-600">
                                                 <div className="flex justify-between">
                                                     <span className="text-gray-500 group-hover:text-gray-400">Month</span>
-                                                    <span className="font-bold">¥{camp.budget.toLocaleString()}</span>
+                                                    <span className="font-bold">
+                                                        ¥{(camp.hasCustomBudget ? camp.budget : 0).toLocaleString()}
+                                                    </span>
                                                 </div>
                                                 <div className="flex justify-between" title="Estimated Gross Spend (with Commission)">
                                                     <span className="text-gray-500 group-hover:text-gray-400">Total</span>
