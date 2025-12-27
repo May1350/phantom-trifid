@@ -216,12 +216,15 @@ router.get('/google/login', (req, res) => {
 });
 
 router.get('/google/login/callback', async (req, res) => {
-    const { code } = req.query;
+    const { code, state } = req.query;
     const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
     const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
     const REDIRECT_URI = `${getBaseUrl(req)}/api/auth/google/login/callback`;
 
     if (!code) return res.status(400).send('No code provided');
+
+    // Check if this is a signup flow
+    const isSignupMode = state === 'mode_signup';
 
     try {
         const { data: tokenData } = await axios.post('https://oauth2.googleapis.com/token', {
@@ -240,16 +243,46 @@ router.get('/google/login/callback', async (req, res) => {
 
         let account = db.getAccountByEmail(email);
 
-        // LOGIN: Only allow existing accounts
-        if (!account) {
-            logger.info(`Google login rejected: ${email} is not registered`);
-            return res.redirect(`${getBaseUrl(req)}/login?error=not_registered&email=${encodeURIComponent(email)}`);
-        }
+        if (isSignupMode) {
+            // SIGNUP MODE: Create account if it doesn't exist
+            if (account) {
+                logger.info(`Google signup rejected: ${email} already registered`);
+                return res.redirect(`${getBaseUrl(req)}/signup?error=already_registered&email=${encodeURIComponent(email)}`);
+            }
 
-        // Check account status
-        if (account.status && account.status !== 'active') {
-            logger.warn(`Google login blocked: Account ${account.email} is ${account.status}`);
-            return res.redirect(`${getBaseUrl(req)}/login?error=account_${account.status}`);
+            // Create new account
+            const newAccountId = `user_${Date.now()}`;
+            const randomPassword = await bcrypt.hash(Math.random().toString(36), 10);
+
+            db.createAccount({
+                id: newAccountId,
+                name: name,
+                email: email,
+                password: randomPassword,
+                type: 'agency',
+                status: 'active',
+                provider: 'google'
+            });
+
+            account = db.getAccount(newAccountId);
+
+            if (!account) {
+                return res.status(500).send('Account creation failed');
+            }
+
+            logger.info(`Google signup successful: ${email}`);
+        } else {
+            // LOGIN MODE: Only allow existing accounts
+            if (!account) {
+                logger.info(`Google login rejected: ${email} is not registered`);
+                return res.redirect(`${getBaseUrl(req)}/login?error=not_registered&email=${encodeURIComponent(email)}`);
+            }
+
+            // Check account status
+            if (account.status && account.status !== 'active') {
+                logger.warn(`Google login blocked: Account ${account.email} is ${account.status}`);
+                return res.redirect(`${getBaseUrl(req)}/login?error=account_${account.status}`);
+            }
         }
 
         // Create session
@@ -276,7 +309,8 @@ router.get('/google/login/callback', async (req, res) => {
 // ==========================================
 router.get('/google/signup', (req, res) => {
     const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
-    const REDIRECT_URI = `${getBaseUrl(req)}/api/auth/google/signup/callback`;
+    // Use same callback as login, but with mode=signup in state
+    const REDIRECT_URI = `${getBaseUrl(req)}/api/auth/google/login/callback`;
 
     logger.info(`Initiating Google Signup Redirect: REDIRECT_URI=${REDIRECT_URI}`);
 
@@ -285,79 +319,10 @@ router.get('/google/signup', (req, res) => {
         'https://www.googleapis.com/auth/userinfo.email'
     ].join(' ');
 
-    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=${scope}&access_type=online&prompt=select_account`;
+    // Pass mode=signup in state parameter
+    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=${scope}&access_type=online&prompt=select_account&state=mode_signup`;
 
     res.redirect(authUrl);
-});
-
-router.get('/google/signup/callback', async (req, res) => {
-    const { code } = req.query;
-    const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
-    const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
-    const REDIRECT_URI = `${getBaseUrl(req)}/api/auth/google/signup/callback`;
-
-    if (!code) return res.status(400).send('No code provided');
-
-    try {
-        const { data: tokenData } = await axios.post('https://oauth2.googleapis.com/token', {
-            client_id: GOOGLE_CLIENT_ID,
-            client_secret: GOOGLE_CLIENT_SECRET,
-            code,
-            grant_type: 'authorization_code',
-            redirect_uri: REDIRECT_URI
-        });
-
-        const { data: userInfo } = await axios.get('https://www.googleapis.com/oauth2/v2/userinfo', {
-            headers: { Authorization: `Bearer ${tokenData.access_token}` }
-        });
-
-        const { email, name } = userInfo;
-
-        // SIGNUP: Check if account already exists
-        let account = db.getAccountByEmail(email);
-
-        if (account) {
-            logger.info(`Google signup rejected: ${email} already registered`);
-            return res.redirect(`${getBaseUrl(req)}/signup?error=already_registered&email=${encodeURIComponent(email)}`);
-        }
-
-        // Create new account
-        const newAccountId = `user_${Date.now()}`;
-        const randomPassword = await bcrypt.hash(Math.random().toString(36), 10);
-
-        db.createAccount({
-            id: newAccountId,
-            name: name,
-            email: email,
-            password: randomPassword,
-            type: 'agency',
-            status: 'active', // Auto-activate for Google signups
-            provider: 'google'
-        });
-
-        account = db.getAccount(newAccountId);
-
-        if (!account) {
-            return res.status(500).send('Account creation failed');
-        }
-
-        // Create session
-        if (req.session) {
-            (req.session as any).accountId = account.id;
-            (req.session as any).accountType = account.type;
-        }
-
-        // Redirect to dashboard
-        const encodedName = encodeURIComponent(account.name);
-        res.redirect(`${getBaseUrl(req)}/auth-callback?role=${account.type}&id=${account.id}&name=${encodedName}&email=${account.email}`);
-
-    } catch (error: any) {
-        logger.error('Error in Google Signup Callback:', {
-            message: error.message,
-            stack: error.stack
-        });
-        res.status(500).send('Google Signup Failed');
-    }
 });
 
 export default router;
