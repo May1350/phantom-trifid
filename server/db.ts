@@ -143,6 +143,16 @@ const initializeDBSync = () => {
                         createdAt: new Date().toISOString(),
                         status: 'active',
                         provider: 'email'
+                    },
+                    {
+                        id: 'agency_guntak',
+                        name: 'Takgun',
+                        type: 'agency',
+                        email: 'takgun.jr@gmail.com',
+                        password: agencyPassword,
+                        createdAt: new Date().toISOString(),
+                        status: 'active',
+                        provider: 'google' // Pre-authorize as google provider
                     }
                 ],
                 accountTokens: [],
@@ -208,6 +218,16 @@ const initializeDBSync = () => {
                         createdAt: new Date().toISOString(),
                         status: 'active',
                         provider: 'email'
+                    },
+                    {
+                        id: 'agency_guntak',
+                        name: 'Takgun',
+                        type: 'agency',
+                        email: 'takgun.jr@gmail.com',
+                        password: agencyPassword,
+                        createdAt: new Date().toISOString(),
+                        status: 'active',
+                        provider: 'google'
                     }
                 ];
 
