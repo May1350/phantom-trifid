@@ -184,7 +184,7 @@ router.get('/meta/callback', async (req: Request, res: Response) => {
             name
         });
 
-        res.redirect(`${config.frontend.url}/settings?status=success`);
+        res.redirect(`${getBaseUrl(req)}/settings?status=success`);
     } catch (error: any) {
         logger.error('Meta OAuth Error:', {
             message: error.message,
@@ -250,7 +250,7 @@ router.get('/google/login/callback', async (req, res) => {
                 email: email,
                 password: randomPassword,
                 type: 'agency',
-                status: 'active',
+                status: 'pending',
                 provider: 'google'
             });
 
@@ -258,6 +258,12 @@ router.get('/google/login/callback', async (req, res) => {
         }
 
         if (account) {
+            // Check account status before creating session
+            if (account.status !== 'active') {
+                logger.warn(`Google login blocked: Account ${account.email} is ${account.status}`);
+                return res.redirect(`${getBaseUrl(req)}/login?error=account_${account.status}`);
+            }
+
             if (req.session) {
                 (req.session as any).accountId = account.id;
                 (req.session as any).accountType = account.type;

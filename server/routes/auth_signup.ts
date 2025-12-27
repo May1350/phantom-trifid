@@ -33,7 +33,7 @@ router.post('/', authValidators.signup, validate, async (req: any, res: any) => 
         email,
         password: hashedPassword,
         type: 'agency', // Default type
-        status: 'active', // TODO: Change to 'pending' if approval required
+        status: 'pending', // Requirements: Change to 'pending' if approval required
         provider: 'email'
     });
 

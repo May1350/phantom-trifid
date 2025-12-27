@@ -95,6 +95,11 @@ router.get('/current', (req, res) => {
         return res.status(404).json({ error: 'Account not found' });
     }
 
+    // Enforce status check for existing sessions
+    if (account.status !== 'active') {
+        return res.status(403).json({ error: 'Account not active', status: account.status });
+    }
+
     res.json({
         id: account.id,
         name: account.name,
