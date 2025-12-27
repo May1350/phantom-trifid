@@ -1,14 +1,29 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 
 export const SignupPage: React.FC = () => {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [name, setName] = useState('');
     const [error, setError] = useState('');
+    const [urlError, setUrlError] = useState('');
     const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        const errorParam = searchParams.get('error');
+        const emailParam = searchParams.get('email');
+
+        if (errorParam === 'already_registered') {
+            setUrlError(
+                emailParam
+                    ? `Account ${emailParam} is already registered. Please log in instead.`
+                    : 'This account is already registered. Please log in instead.'
+            );
+        }
+    }, [searchParams]);
 
     const handleSignup = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -60,6 +75,29 @@ export const SignupPage: React.FC = () => {
                     <h1 className="text-3xl font-black uppercase tracking-tighter mb-2">JOIN PHANTOM</h1>
                     <p className="text-gray-500 font-mono text-xs uppercase">Create your agency account</p>
                 </div>
+
+                {/* URL Error Message (from Google signup redirect) */}
+                {urlError && (
+                    <div className="mb-6 bg-red-50 border-2 border-red-500 p-4">
+                        <div className="flex items-start gap-3">
+                            <span className="text-red-500 font-bold text-xl">⚠</span>
+                            <div className="flex-1">
+                                <p className="font-bold uppercase text-red-700 text-sm mb-1">
+                                    Account Already Exists
+                                </p>
+                                <p className="text-red-600 text-sm mb-3">
+                                    {urlError}
+                                </p>
+                                <Link
+                                    to="/login"
+                                    className="inline-block bg-red-500 text-white px-4 py-2 text-xs font-bold uppercase hover:bg-red-600 transition-colors"
+                                >
+                                    Go to Login →
+                                </Link>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 <form onSubmit={handleSignup} className="space-y-4">
                     <div>
