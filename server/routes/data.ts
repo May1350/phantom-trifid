@@ -4,6 +4,7 @@ import { db } from '../db';
 import { config } from '../config/env';
 import { logger } from '../utils/logger';
 import { getValidGoogleToken } from '../utils/tokenRefresh';
+import { syncConnections } from '../services/syncService';
 
 const router = Router();
 
@@ -126,182 +127,21 @@ router.get('/connections', async (req, res) => {
     const accountId = req.accountId;
     if (!accountId) return res.status(401).json({ error: 'Unauthorized' });
 
-    const googleTokens = db.getTokens(accountId, 'google');
-    const metaTokens = db.getTokens(accountId, 'meta');
-
-    let accounts: any[] = [];
-
-    // 1. Fetch Google Accounts (Iterate over all connected Google accounts)
-    for (const token of googleTokens) {
-        try {
-            const developerToken = config.google.developerToken;
-            if (!developerToken) {
-                logger.warn(`[WARNING] Google Developer Token is missing. Cannot fetch Google Ads accounts for ${token.email}.`);
-                continue;
-            }
-
-            // Get valid token (auto-refresh if expired)
-            const validToken = await getValidGoogleToken(accountId, token.email || '');
-            if (!validToken) {
-                logger.error(`Failed to get valid token for ${token.email}`);
-                continue;
-            }
-
-            const response = await axios.get('https://googleads.googleapis.com/v19/customers:listAccessibleCustomers', {
-                headers: {
-                    'Authorization': `Bearer ${validToken}`,
-                    'developer-token': developerToken
-                }
-            });
-
-            logger.info(`[DEBUG] Google API Response for ${token.email}`, {
-                resourceNames: response.data.resourceNames,
-                count: response.data.resourceNames?.length
-            });
-
-            // Fetch detailed info for each customer to get real account names
-            const googleAccounts = await Promise.all(
-                response.data.resourceNames.map(async (rn: string) => {
-                    const customerId = rn.split('/')[1];
-                    try {
-                        // Attempt to fetch name, trying both with and without login-customer-id if needed
-                        let customerInfo;
-                        try {
-                            customerInfo = await axios.post(
-                                `https://googleads.googleapis.com/v19/customers/${customerId}/googleAds:search`,
-                                {
-                                    query: `SELECT customer.id, customer.descriptive_name, customer.manager FROM customer WHERE customer.id = ${customerId}`
-                                },
-                                {
-                                    headers: {
-                                        'Authorization': `Bearer ${validToken}`,
-                                        'developer-token': developerToken,
-                                        'Content-Type': 'application/json',
-                                        'login-customer-id': customerId
-                                    }
-                                }
-                            );
-                        } catch (err: any) {
-                            if (err.response?.status === 403 || err.response?.status === 400) {
-                                // Try again WITHOUT login-customer-id header
-                                customerInfo = await axios.post(
-                                    `https://googleads.googleapis.com/v19/customers/${customerId}/googleAds:search`,
-                                    {
-                                        query: `SELECT customer.id, customer.descriptive_name, customer.manager FROM customer WHERE customer.id = ${customerId}`
-                                    },
-                                    {
-                                        headers: {
-                                            'Authorization': `Bearer ${validToken}`,
-                                            'developer-token': developerToken,
-                                            'Content-Type': 'application/json'
-                                        }
-                                    }
-                                );
-                            } else {
-                                throw err;
-                            }
-                        }
-
-                        // Extract descriptive_name from search results
-                        const result = customerInfo?.data.results?.[0];
-                        const descriptiveName = result?.customer?.descriptiveName;
-
-                        // Format customer ID as XXX-XXX-XXXX
-                        const formattedId = customerId.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
-
-                        // Always show: "Name (XXX-XXX-XXXX)" or "Google Ads (XXX-XXX-XXXX)"
-                        const accountName = descriptiveName
-                            ? `${descriptiveName} (${formattedId})`
-                            : `Google Ads (${formattedId})`;
-
-                        return {
-                            id: rn,
-                            name: accountName,
-                            provider: 'google' as const,
-                            status: 'CONNECTED',
-                            connectedEmail: token.email
-                        };
-                    } catch (err: any) {
-                        // Enhanced error logging to diagnose 403 issues
-                        logger.warn(`Failed to fetch name for customer ${customerId}`, {
-                            error: err.message,
-                            status: err.response?.status,
-                            statusText: err.response?.statusText,
-                            errorDetails: err.response?.data
-                        });
-
-                        // Fallback: Format ID even on error
-                        const formattedId = customerId.replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3');
-
-                        return {
-                            id: rn,
-                            name: `Google Ads (${formattedId})`,
-                            provider: 'google' as const,
-                            status: 'CONNECTED',
-                            connectedEmail: token.email
-                        };
-                    }
-                })
-            );
-
-            // AUTO-UPDATE names in DB for existing clients if we found a better name
-            try {
-                const data = db.read();
-                let updated = false;
-                if (data.clients) {
-                    for (const client of data.clients) {
-                        if (client.accountId === accountId) {
-                            const match = googleAccounts.find(ga => ga.id === client.id);
-                            if (match && match.name !== client.name && !match.name.startsWith('Google Ads (')) {
-                                client.name = match.name;
-                                updated = true;
-                                logger.info(`Updating saved client name for ${client.id} to ${match.name}`);
-                            }
-                        }
-                    }
-                }
-                if (updated) {
-                    await db.write(data);
-                    logger.info(`Auto-updated client names in database for account ${accountId}`);
-                }
-            } catch (dbErr: any) {
-                logger.error('Failed to auto-update client names in DB', { error: dbErr.message });
-            }
-
-            logger.info(`[DEBUG] Parsed Google Accounts`, { count: googleAccounts.length, accounts: googleAccounts });
-
-            accounts = [...accounts, ...googleAccounts];
-        } catch (error: any) {
-            logger.error(`Error fetching Google accounts for ${token.email}`, {
-                message: error.message,
-                responseData: error.response?.data
-            });
-        }
+    // 1. Try Cache First (0ms latency target)
+    const cached = db.getCache(accountId, 'connections');
+    if (cached && Array.isArray(cached)) {
+        return res.json(cached);
     }
 
-    // 2. Fetch Meta Accounts (Iterate over all connected Meta accounts)
-    for (const token of metaTokens) {
-        try {
-            const response = await axios.get('https://graph.facebook.com/v17.0/me/adaccounts', {
-                params: {
-                    fields: 'id,name,account_id',
-                    access_token: token.access_token
-                }
-            });
-            const metaAccounts = response.data.data.map((acc: any) => ({
-                id: acc.id,
-                name: acc.name,
-                provider: 'meta',
-                status: 'CONNECTED',
-                connectedEmail: token.email
-            }));
-            accounts = [...accounts, ...metaAccounts];
-        } catch (error: any) {
-            logger.error(`Error fetching Meta accounts for ${token.email}`, { message: error.message });
-        }
+    // 2. Fallback: Sync immediately if no cache
+    logger.info(`No connection cache for ${accountId}, syncing now...`);
+    try {
+        const freshData = await syncConnections(accountId);
+        res.json(freshData);
+    } catch (error) {
+        logger.error(`Initial sync failed for ${accountId}`, { error: (error as Error).message });
+        res.status(500).json({ error: 'Failed to fetch connections' });
     }
-
-    res.json(accounts);
 });
 
 // ==========================================

@@ -106,6 +106,14 @@ interface DBData {
     settings: {
         selected_account_id?: string;
     };
+    cache?: {
+        [accountId: string]: {
+            [key: string]: {
+                data: any;
+                updatedAt: string;
+            }
+        }
+    };
 }
 
 // ==========================================
@@ -711,5 +719,26 @@ export const db = {
             a.type === type &&
             new Date(a.createdAt) > cutoffTime
         ) || false;
+    },
+
+    // ==========================================
+    // CACHE MANAGEMENT
+    // ==========================================
+
+    getCache: (accountId: string, key: string): any => {
+        const data = db.read();
+        return data.cache?.[accountId]?.[key]?.data || null;
+    },
+
+    setCache: (accountId: string, key: string, value: any) => {
+        const data = db.read();
+        if (!data.cache) data.cache = {};
+        if (!data.cache[accountId]) data.cache[accountId] = {};
+
+        data.cache[accountId][key] = {
+            data: value,
+            updatedAt: new Date().toISOString()
+        };
+        db.write(data);
     }
 };

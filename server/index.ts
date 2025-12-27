@@ -18,6 +18,7 @@ import { extractAccountId, requireAuth } from './middleware/auth';
 import cron from 'node-cron';
 import { runDailyAlertCheck } from './alert-checker';
 import { startTokenRefreshScheduler } from './utils/tokenScheduler';
+import { startSyncScheduler } from './services/syncService';
 
 const app = express();
 const PORT = config.port;
@@ -230,6 +231,7 @@ const scheduleDailyAlertCheck = () => {
 
 // Start token refresh scheduler (runs every 30 minutes)
 startTokenRefreshScheduler();
+startSyncScheduler();
 
 scheduleDailyAlertCheck();
 
