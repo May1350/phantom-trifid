@@ -213,8 +213,12 @@ export const CampaignTable: React.FC<CampaignTableProps> = ({ campaigns, loading
                                 }
                             }
 
-                            const projectedRatio = camp.budget > 0 ? (projectedSpend / camp.budget) * 100 : 0;
-                            const isOverBudget = projectedSpend > camp.budget;
+
+                            // Effective Budget: Only usage user-configured budget, otherwise 0
+                            const effectiveBudget = camp.hasCustomBudget ? camp.budget : 0;
+
+                            const projectedRatio = effectiveBudget > 0 ? (projectedSpend / effectiveBudget) * 100 : 0;
+                            const isOverBudget = effectiveBudget > 0 && projectedSpend > effectiveBudget;
 
                             return (
                                 <tr
@@ -260,7 +264,7 @@ export const CampaignTable: React.FC<CampaignTableProps> = ({ campaigns, loading
                                                 <div className="flex justify-between">
                                                     <span className="text-gray-500 group-hover:text-gray-400">Month</span>
                                                     <span className="font-bold">
-                                                        ¥{(camp.hasCustomBudget ? camp.budget : 0).toLocaleString()}
+                                                        ¥{effectiveBudget.toLocaleString()}
                                                     </span>
                                                 </div>
                                                 <div className="flex justify-between" title="Estimated Gross Spend (with Commission)">
@@ -274,10 +278,10 @@ export const CampaignTable: React.FC<CampaignTableProps> = ({ campaigns, loading
                                                 <div className="flex justify-between items-center text-xs font-mono">
                                                     <span className="text-gray-500 group-hover:text-gray-400">Projected</span>
                                                     <span className={isOverBudget ? 'text-red-500 font-bold' : ''}>
-                                                        {Math.round(projectedRatio)}%
+                                                        {effectiveBudget > 0 ? `${Math.round(projectedRatio)}%` : '-'}
                                                     </span>
                                                 </div>
-                                                <ProgressBar value={grossSpend} max={camp.budget} projected={projectedSpend} />
+                                                <ProgressBar value={grossSpend} max={effectiveBudget} projected={projectedSpend} />
                                                 <div className="flex justify-between text-[10px] font-mono text-gray-400 group-hover:text-gray-500">
                                                     <span>Ads: ¥{camp.spend.toLocaleString()}</span>
                                                 </div>
