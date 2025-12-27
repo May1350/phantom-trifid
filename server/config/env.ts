@@ -1,6 +1,9 @@
 import dotenv from 'dotenv';
 
-dotenv.config();
+// Only load .env file in development (Railway injects vars directly)
+if (process.env.NODE_ENV !== 'production') {
+    dotenv.config();
+}
 
 // Required environment variables
 const requiredEnvVars = [
