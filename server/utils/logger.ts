@@ -1,7 +1,14 @@
 import winston from 'winston';
 import path from 'path';
+import 'winston-daily-rotate-file';
+import fs from 'fs-extra';
 
-const logDir = path.join(__dirname, '../logs');
+// Determine log directory: Use DATA_DIR/logs if available, else ../logs
+const DB_DIR = process.env.DATA_DIR || path.join(__dirname, '../');
+const logDir = path.join(DB_DIR, 'logs');
+
+// Ensure log directory exists
+fs.ensureDirSync(logDir);
 
 // Define log format
 const logFormat = winston.format.combine(
@@ -24,30 +31,56 @@ const consoleFormat = winston.format.combine(
     })
 );
 
-// Create logger instance
+// 1. General Application Logger
 export const logger = winston.createLogger({
     level: process.env.LOG_LEVEL || 'info',
     format: logFormat,
     transports: [
-        // Error log file
-        new winston.transports.File({
-            filename: path.join(logDir, 'error.log'),
+        // Error log rotation
+        new winston.transports.DailyRotateFile({
+            filename: path.join(logDir, 'error-%DATE%.log'),
+            datePattern: 'YYYY-MM-DD',
+            zippedArchive: true,
+            maxSize: '20m',
+            maxFiles: '14d',
             level: 'error',
-            maxsize: 5242880, // 5MB
-            maxFiles: 5,
         }),
-        // Combined log file
-        new winston.transports.File({
-            filename: path.join(logDir, 'combined.log'),
-            maxsize: 5242880, // 5MB
-            maxFiles: 5,
+        // Combined log rotation
+        new winston.transports.DailyRotateFile({
+            filename: path.join(logDir, 'combined-%DATE%.log'),
+            datePattern: 'YYYY-MM-DD',
+            zippedArchive: true,
+            maxSize: '20m',
+            maxFiles: '14d',
         }),
     ],
 });
 
+// 2. Dedicated Activity Logger (for Admin Audit)
+// This strictly logs user actions to separate files for easier parsing
+export const activityLogger = winston.createLogger({
+    level: 'info',
+    format: logFormat,
+    transports: [
+        new winston.transports.DailyRotateFile({
+            filename: path.join(logDir, 'activity-%DATE%.log'),
+            datePattern: 'YYYY-MM-DD',
+            zippedArchive: false, // Keep plain text for easy streaming reading
+            maxSize: '20m',
+            maxFiles: '30d',
+        }),
+    ],
+});
+
+
 // Add console transport in development
 if (process.env.NODE_ENV !== 'production') {
     logger.add(
+        new winston.transports.Console({
+            format: consoleFormat,
+        })
+    );
+    activityLogger.add(
         new winston.transports.Console({
             format: consoleFormat,
         })
@@ -57,10 +90,15 @@ if (process.env.NODE_ENV !== 'production') {
 // Helper functions for common log patterns
 export const logAuthEvent = (event: string, details: Record<string, any>) => {
     logger.info('Auth Event', { event, ...details });
+    // Also log key auth events to activity log
+    if (['Login Success', 'Logout', 'Account Created'].includes(event)) {
+        logActivity(details.accountId || 'unknown', event, details);
+    }
 };
 
 export const logSecurityEvent = (event: string, details: Record<string, any>) => {
     logger.warn('Security Event', { event, ...details });
+    logActivity(details.accountId || 'system', `Security: ${event}`, details);
 };
 
 export const logError = (error: Error, context?: Record<string, any>) => {
@@ -68,5 +106,14 @@ export const logError = (error: Error, context?: Record<string, any>) => {
         message: error.message,
         stack: error.stack,
         ...context,
+    });
+};
+
+// Main Activity Logging Function
+export const logActivity = (accountId: string, action: string, details: Record<string, any> = {}) => {
+    activityLogger.info(action, {
+        type: 'activity',
+        accountId,
+        ...details
     });
 };

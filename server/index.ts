@@ -11,6 +11,7 @@ import dataRoutes from './routes/data';
 import sessionRoutes from './routes/session';
 import accountsRoutes from './routes/accounts';
 import alertsRoutes from './routes/alerts';
+import logsRoutes from './routes/logs';
 import authSignupRoutes from './routes/auth_signup';
 import { db } from './db';
 import { extractAccountId, requireAuth } from './middleware/auth';
@@ -127,6 +128,7 @@ app.use('/api/session', authLimiter, sessionRoutes);
 app.use('/api/accounts', requireAuth, apiLimiter, accountsRoutes);
 app.use('/api/data', requireAuth, apiLimiter, dataRoutes);
 app.use('/api/alerts', requireAuth, apiLimiter, alertsRoutes);
+app.use('/api/admin/logs', requireAuth, apiLimiter, logsRoutes);
 
 // Debug Route
 app.get('/api/debug-db', (req, res) => {

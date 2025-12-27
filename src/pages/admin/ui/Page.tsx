@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { UserList } from '../../../features/user-management/ui/UserList';
+import { ActivityLogViewer } from '../../../features/activity-logs/ui/ActivityLogViewer';
 
 export const AdminPage: React.FC = () => {
-    const [activeTab, setActiveTab] = useState<'overview' | 'accounts'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'accounts' | 'logs'>('overview');
 
     return (
         <div className="p-8">
@@ -29,6 +30,15 @@ export const AdminPage: React.FC = () => {
                     >
                         Users & Accounts
                     </button>
+                    <button
+                        onClick={() => setActiveTab('logs')}
+                        className={`px-4 py-2 font-mono text-sm uppercase ${activeTab === 'logs'
+                            ? 'border-b-2 border-black font-bold'
+                            : 'text-gray-500 hover:text-black'
+                            }`}
+                    >
+                        Activity Logs
+                    </button>
                 </div>
             </div>
 
@@ -40,6 +50,7 @@ export const AdminPage: React.FC = () => {
             )}
 
             {activeTab === 'accounts' && <UserList />}
+            {activeTab === 'logs' && <ActivityLogViewer />}
         </div>
     );
 };
