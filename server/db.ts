@@ -122,88 +122,77 @@ const WRITE_DEBOUNCE_MS = 100;
 
 const initializeDBSync = () => {
     try {
-        if (!fs.existsSync(DB_PATH)) {
-            // Create new DB
+        let needsInit = false;
+        let data: DBData | null = null;
+
+        // 1. Try to load existing DB
+        if (fs.existsSync(DB_PATH)) {
+            try {
+                const dataStr = fs.readFileSync(DB_PATH, 'utf-8');
+                data = JSON.parse(dataStr);
+
+                // Basic structural validation
+                if (!data || !Array.isArray(data.accounts)) {
+                    throw new Error("Invalid DB structure: missing accounts array");
+                }
+
+                // Smart Recovery: Check if DB seems to have been reset (empty lists) while backup has data
+                if (fs.existsSync(`${DB_PATH}.backup`)) {
+                    try {
+                        const backupStr = fs.readFileSync(`${DB_PATH}.backup`, 'utf-8');
+                        const backupData = JSON.parse(backupStr);
+
+                        // Indicators of data: tokens, clients, or campaign budgets
+                        const currentHasData = (data.accountTokens?.length || 0) > 0 || (data.clients?.length || 0) > 0 || Object.keys(data.campaign_budgets || {}).length > 0;
+                        const backupHasData = (backupData.accountTokens?.length || 0) > 0 || (backupData.clients?.length || 0) > 0 || Object.keys(backupData.campaign_budgets || {}).length > 0;
+
+                        if (!currentHasData && backupHasData) {
+                            logger.warn('Detected potential data loss (clean DB but populated backup). Restoring from backup...');
+                            data = backupData;
+                            // Immediately persist the restored data
+                            fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2));
+                            logger.info('Successfully restored database from backup');
+                        }
+                    } catch (backupCheckError) {
+                        logger.warn('Failed to check backup for smart recovery', { error: (backupCheckError as Error).message });
+                    }
+                }
+            } catch (parseError) {
+                logger.error('Failed to parse database.json', { error: (parseError as Error).message });
+                // Rename corrupt file for investigation
+                const corruptPath = `${DB_PATH}.corrupt.${Date.now()}`;
+                fs.copySync(DB_PATH, corruptPath);
+                logger.warn(`Corrupt DB preserved at ${corruptPath}`);
+                data = null; // Trigger recovery
+            }
+        }
+
+        // 2. Recovery from backup if main DB is missing or invalid
+        if (!data && fs.existsSync(`${DB_PATH}.backup`)) {
+            try {
+                logger.warn('Attempting to restore from backup...');
+                const backupStr = fs.readFileSync(`${DB_PATH}.backup`, 'utf-8');
+                const backupData = JSON.parse(backupStr);
+
+                if (backupData && Array.isArray(backupData.accounts)) {
+                    data = backupData;
+                    // Restore physical file
+                    fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2));
+                    logger.info('Successfully restored database from backup');
+                }
+            } catch (backupError) {
+                logger.error('Failed to recover from backup', { error: (backupError as Error).message });
+            }
+        }
+
+        // 3. Initialize if still no data
+        if (!data) {
+            logger.info('Initializing new database...');
             const adminPassword = bcrypt.hashSync('1111', 10);
             const agencyPassword = bcrypt.hashSync('1111', 10);
 
-            const initialData: DBData = {
+            data = {
                 accounts: [
-                    {
-                        id: 'admin',
-                        name: 'System Administrator',
-                        type: 'admin',
-                        email: 'admin@gmail.com',
-                        password: adminPassword,
-                        createdAt: new Date().toISOString(),
-                        status: 'active',
-                        provider: 'email'
-                    },
-                    {
-                        id: 'agency_test',
-                        name: 'Test Agency',
-                        type: 'agency',
-                        email: 'test@gmail.com',
-                        password: agencyPassword,
-                        createdAt: new Date().toISOString(),
-                        status: 'active',
-                        provider: 'email'
-                    },
-                    {
-                        id: 'agency_guntak',
-                        name: 'Takgun',
-                        type: 'agency',
-                        email: 'takgun.jr@gmail.com',
-                        password: agencyPassword,
-                        createdAt: new Date().toISOString(),
-                        status: 'active',
-                        provider: 'google' // Pre-authorize as google provider
-                    }
-                ],
-                accountTokens: [],
-                clients: [],
-                campaign_budgets: {},
-                alerts: [],
-                settings: {}
-            };
-            fs.writeFileSync(DB_PATH, JSON.stringify(initialData, null, 2));
-            logger.info('New database created with default admin and test agency accounts');
-        } else {
-            // 기존 DB 마이그레이션
-            const dataStr = fs.readFileSync(DB_PATH, 'utf-8');
-            let data: DBData;
-            try {
-                data = JSON.parse(dataStr);
-            } catch (parseError) {
-                logger.error('Failed to parse database.json, re-initializing', { error: parseError });
-                // Re-initialize if corrupt
-                const adminPassword = bcrypt.hashSync('1111', 10);
-                data = {
-                    accounts: [{
-                        id: 'admin',
-                        name: 'System Administrator',
-                        type: 'admin',
-                        email: 'admin@gmail.com',
-                        password: adminPassword,
-                        createdAt: new Date().toISOString(),
-                        status: 'active',
-                        provider: 'email'
-                    }],
-                    accountTokens: [], clients: [], campaign_budgets: {}, alerts: [], settings: {}
-                };
-            }
-
-            let changed = false;
-
-            // Ensure accounts list is seeded if empty or missing admin
-            const adminExists = data.accounts && data.accounts.find(a => a.email === 'admin@gmail.com');
-
-            if (!data.accounts || data.accounts.length === 0 || !adminExists) {
-                logger.info('[DB] Seeding missing default accounts into existing DB...');
-                const adminPassword = bcrypt.hashSync('1111', 10);
-                const agencyPassword = bcrypt.hashSync('1111', 10);
-
-                const defaultAccounts: Account[] = [
                     {
                         id: 'admin',
                         name: 'System Administrator',
@@ -234,28 +223,85 @@ const initializeDBSync = () => {
                         status: 'active',
                         provider: 'google'
                     }
-                ];
-
-                if (!data.accounts) {
-                    data.accounts = defaultAccounts;
-                } else if (!adminExists) {
-                    data.accounts.push(...defaultAccounts.filter(da => !data.accounts.find(a => a.email === da.email)));
-                }
-                changed = true;
-            }
-
-            // Migration from old structure
-            if (!(data as any).accounts_old_check_done) {
-                // Perform other migrations if needed...
-                (data as any).accounts_old_check_done = true;
-                changed = true;
-            }
-
-            if (changed) {
-                fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2));
-                logger.info('Database migrated/seeded successfully');
-            }
+                ],
+                accountTokens: [],
+                clients: [],
+                campaign_budgets: {},
+                alerts: [],
+                settings: {}
+            };
+            fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2));
         }
+
+        // 4. Migration & Seeding (safe merge)
+        let changed = false;
+
+        // Ensure accounts list is seeded if empty or missing admin
+        const adminExists = data.accounts && data.accounts.find(a => a.email === 'admin@gmail.com');
+
+        if (!data.accounts || data.accounts.length === 0 || !adminExists) {
+            logger.info('[DB] Seeding missing default accounts into existing DB...');
+            const adminPassword = bcrypt.hashSync('1111', 10);
+            // ... (rest of seeding logic is fine, relying on unique check)
+            const agencyPassword = bcrypt.hashSync('1111', 10);
+
+            const defaultAccounts: Account[] = [
+                {
+                    id: 'admin',
+                    name: 'System Administrator',
+                    type: 'admin',
+                    email: 'admin@gmail.com',
+                    password: adminPassword,
+                    createdAt: new Date().toISOString(),
+                    status: 'active',
+                    provider: 'email'
+                },
+                {
+                    id: 'agency_test',
+                    name: 'Test Agency',
+                    type: 'agency',
+                    email: 'test@gmail.com',
+                    password: agencyPassword,
+                    createdAt: new Date().toISOString(),
+                    status: 'active',
+                    provider: 'email'
+                },
+                {
+                    id: 'agency_guntak',
+                    name: 'Takgun',
+                    type: 'agency',
+                    email: 'takgun.jr@gmail.com',
+                    password: agencyPassword,
+                    createdAt: new Date().toISOString(),
+                    status: 'active',
+                    provider: 'google'
+                }
+            ];
+
+            if (!data.accounts) {
+                data.accounts = defaultAccounts;
+            } else if (!adminExists) {
+                // Only add if not exists
+                defaultAccounts.forEach(da => {
+                    if (!data!.accounts.find(a => a.email === da.email)) {
+                        data!.accounts.push(da);
+                    }
+                });
+            }
+            changed = true;
+        }
+
+        // Migration from old structure
+        if (!(data as any).accounts_old_check_done) {
+            (data as any).accounts_old_check_done = true;
+            changed = true;
+        }
+
+        if (changed) {
+            fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2));
+            logger.info('Database migrated/seeded successfully');
+        }
+
     } catch (e) {
         logger.error('Critical failure in initializeDBSync', { error: (e as Error).message });
     }
@@ -309,6 +355,10 @@ export const db = {
 
                 // 2. Backup existing file if it exists
                 if (await fs.pathExists(DB_PATH)) {
+                    // Rotate existing backup if present
+                    if (await fs.pathExists(backupPath)) {
+                        await fs.copy(backupPath, `${backupPath}.old`, { overwrite: true });
+                    }
                     await fs.copy(DB_PATH, backupPath, { overwrite: true });
                 }
 
