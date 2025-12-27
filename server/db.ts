@@ -3,7 +3,12 @@ import path from 'path';
 import bcrypt from 'bcrypt';
 import { logger, logError } from './utils/logger';
 
-const DB_PATH = path.join(__dirname, 'database.json');
+const DB_DIR = process.env.DATA_DIR || __dirname;
+// Ensure directory exists if using a custom path
+if (process.env.DATA_DIR) {
+    fs.ensureDirSync(process.env.DATA_DIR);
+}
+const DB_PATH = path.join(DB_DIR, 'database.json');
 
 // ==========================================
 // TYPE DEFINITIONS
