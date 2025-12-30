@@ -234,6 +234,11 @@ export const DemoDashboard: React.FC = () => {
             </div>
 
             <div className="border border-black overflow-hidden bg-white shadow-2xl">
+                {/* Demo "Top Bar" to match real app layout */}
+                <div className="bg-white border-b border-black p-2 flex justify-end">
+                    <DemoAlertBadge />
+                </div>
+
                 {/* Filter Tabs */}
                 <div className="flex border-b border-black text-xs font-mono font-bold">
                     {(['all', 'active', 'paused', 'ended'] as FilterStatus[]).map(status => (
