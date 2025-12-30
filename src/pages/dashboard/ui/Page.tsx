@@ -3,6 +3,7 @@ import { KPIGrid } from '../../../features/dashboard/ui/KPIGrid';
 import { CampaignTable, type Campaign } from '../../../features/dashboard/ui/CampaignTable';
 import { ClientManager } from '../../../features/dashboard/ui/ClientManager';
 import { MonthPicker } from '../../../features/dashboard/ui/MonthPicker';
+import { AlertBadge } from '../../../features/alerts/ui/AlertBadge';
 
 interface Account {
     id: string;
@@ -137,20 +138,20 @@ export const DashboardPage: React.FC = () => {
                 </div>
 
                 <div className="flex justify-between items-end flex-wrap gap-4">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1">
+                        <AlertBadge />
                         <button
                             onClick={() => setIsManagerOpen(true)}
-                            className="text-xs font-mono border border-black px-2 py-1 hover:bg-black hover:text-white transition-colors mr-2 cursor-pointer"
+                            className="text-[10px] font-mono border border-black px-2 py-1.5 hover:bg-black hover:text-white transition-all active:scale-95 cursor-pointer uppercase tracking-wider"
                         >
-                            클라이언트
+                            Manage Client
                         </button>
 
-                        <label htmlFor="client-select" className="text-xs font-bold uppercase">Client:</label>
                         <select
                             id="client-select"
                             value={selectedAccountId}
                             onChange={handleAccountChange}
-                            className="border border-black bg-transparent font-mono text-xs p-1 min-w-[200px] focus:outline-none focus:ring-1 focus:ring-black cursor-pointer"
+                            className="border border-black bg-transparent font-mono text-[10px] p-1.5 min-w-[180px] focus:outline-none focus:ring-1 focus:ring-black cursor-pointer uppercase"
                         >
                             <option value="" disabled>-- SELECT CLIENT --</option>
                             {accounts.map(account => (

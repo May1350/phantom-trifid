@@ -114,7 +114,7 @@ const StatusIndicator: React.FC<{ status: 'gray' | 'green' | 'yellow' | 'red' }>
 };
 
 export const DemoDashboard: React.FC = () => {
-    const [campaigns, setCampaigns] = useState<DemoCampaign[]>(DEMO_CAMPAIGNS);
+    const [campaigns] = useState<DemoCampaign[]>(DEMO_CAMPAIGNS);
     const [filterStatus, setFilterStatus] = useState<FilterStatus>('all');
     const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: SortDirection } | null>(null);
     const [selectedCampaign, setSelectedCampaign] = useState<DemoCampaign | null>(null);
@@ -175,7 +175,7 @@ export const DemoDashboard: React.FC = () => {
         const recDaily = daysLeft > 0 ? remaining / daysLeft : 0;
         const projectedSpend = camp.status === 'active' ? camp.spend + (camp.dailyBudget * daysLeft) : camp.spend;
 
-        return { recDaily, projectedSend: projectedSpend, daysLeft };
+        return { recDaily, projectedSpend, daysLeft };
     };
 
     const getCampaignStatus = (camp: DemoCampaign) => {
@@ -286,8 +286,8 @@ export const DemoDashboard: React.FC = () => {
                                     <td className="p-3 border-r border-black group-hover:border-white uppercase text-xs">
                                         <span
                                             className={`px-1 border ${camp.status === 'active'
-                                                    ? 'border-black text-black group-hover:border-white group-hover:text-white'
-                                                    : 'border-gray-400 text-gray-400'
+                                                ? 'border-black text-black group-hover:border-white group-hover:text-white'
+                                                : 'border-gray-400 text-gray-400'
                                                 }`}
                                         >
                                             {camp.status}
@@ -311,8 +311,8 @@ export const DemoDashboard: React.FC = () => {
                                                     </span>
                                                     <span
                                                         className={`font-mono text-sm ${recDaily > (camp.dailyBudget || 0) * 1.3
-                                                                ? 'text-red-500 font-bold'
-                                                                : ''
+                                                            ? 'text-red-500 font-bold'
+                                                            : ''
                                                             }`}
                                                     >
                                                         ¥{Math.round(recDaily).toLocaleString()}

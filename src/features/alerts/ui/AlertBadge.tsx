@@ -32,13 +32,27 @@ export const AlertBadge: React.FC = () => {
             const res = await fetch('/api/alerts', {
                 credentials: 'include'
             });
-            const data = await res.json();
 
+            if (!res.ok) {
+                console.warn('Alerts API returned status:', res.status);
+                setAlerts([]);
+                setUnreadCount(0);
+                return;
+            }
+
+            const contentType = res.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                console.warn('Alerts API returned non-JSON content:', contentType);
+                setAlerts([]);
+                setUnreadCount(0);
+                return;
+            }
+
+            const data = await res.json();
             if (Array.isArray(data)) {
                 setAlerts(data);
                 setUnreadCount(data.filter((a: Alert) => !a.isRead).length);
             } else {
-                // If not an array (e.g. { error: '...' }), reset state
                 setAlerts([]);
                 setUnreadCount(0);
             }
