@@ -128,11 +128,28 @@ export const AlertBadge: React.FC = () => {
             {/* 알람 뱃지 버튼 */}
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className={`relative p-2 border border-black transition-colors ${isOpen ? 'bg-black text-white' : 'hover:bg-gray-50'}`}
+                className={`group relative p-2 transition-all duration-200 hover:bg-black/5 active:scale-95 ${isOpen ? 'bg-black text-white shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]' : 'bg-white border border-black/10 hover:border-black'
+                    }`}
+                aria-label="Notifications"
             >
-                <span className="text-lg">BELL</span>
+                <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className={`transition-transform duration-200 ${isOpen ? 'rotate-12' : 'group-hover:rotate-12'}`}
+                >
+                    <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+                    <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
+                </svg>
                 {unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-black text-white text-[10px] font-bold border border-white flex items-center justify-center px-1 h-4 min-w-[16px]">
+                    <span className={`absolute -top-1 -right-1 text-[9px] font-black border flex items-center justify-center h-4 min-w-[16px] px-1 transition-colors ${isOpen ? 'bg-white text-black border-black/20' : 'bg-black text-white border-white'
+                        }`}>
                         {unreadCount > 9 ? '9+' : unreadCount}
                     </span>
                 )}

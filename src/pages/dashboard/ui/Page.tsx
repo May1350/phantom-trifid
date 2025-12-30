@@ -142,7 +142,7 @@ export const DashboardPage: React.FC = () => {
                             onClick={() => setIsManagerOpen(true)}
                             className="text-xs font-mono border border-black px-2 py-1 hover:bg-black hover:text-white transition-colors mr-2 cursor-pointer"
                         >
-                            [MANAGE]
+                            클라이언트
                         </button>
 
                         <label htmlFor="client-select" className="text-xs font-bold uppercase">Client:</label>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '../../../shared/ui';
+import { DemoDashboard } from './DemoDashboard';
 
 export const LandingPage: React.FC = () => {
     return (
@@ -140,52 +141,15 @@ export const LandingPage: React.FC = () => {
                     <div className="max-w-7xl mx-auto">
                         <div className="text-center mb-12">
                             <h2 className="text-5xl md:text-6xl font-black uppercase tracking-tighter mb-6">
-                                One Dashboard.<br />All Your Budgets.
+                                Try It Yourself.<br />No Sign-Up Required.
                             </h2>
                             <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-12">
-                                Stop juggling. Start managing. See everything in one place, update in real-time, and never overspend again.
+                                This is a fully functional demo. Click campaigns, sort columns, filter by status. Experience the real product right now.
                             </p>
                         </div>
 
-                        {/* Dashboard Screenshot */}
-                        <div className="mb-12">
-                            <img
-                                src="/dashboard-preview.png"
-                                alt="Dashboard preview showing unified budget management"
-                                className="w-full max-w-6xl mx-auto rounded-lg shadow-2xl border-4 border-black"
-                            />
-                        </div>
-
-                        {/* Key Benefits */}
-                        <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-                            <div className="text-center">
-                                <div className="w-16 h-16 bg-black text-white flex items-center justify-center mx-auto mb-4 text-2xl font-black">
-                                    1
-                                </div>
-                                <h3 className="text-lg font-bold uppercase mb-2">See Everything</h3>
-                                <p className="text-gray-600 text-sm">
-                                    Google + Meta budgets side-by-side. Real-time updates. Zero lag.
-                                </p>
-                            </div>
-                            <div className="text-center">
-                                <div className="w-16 h-16 bg-black text-white flex items-center justify-center mx-auto mb-4 text-2xl font-black">
-                                    2
-                                </div>
-                                <h3 className="text-lg font-bold uppercase mb-2">Stay In Control</h3>
-                                <p className="text-gray-600 text-sm">
-                                    Set alerts for budget thresholds. Get notified before you overspend.
-                                </p>
-                            </div>
-                            <div className="text-center">
-                                <div className="w-16 h-16 bg-black text-white flex items-center justify-center mx-auto mb-4 text-2xl font-black">
-                                    3
-                                </div>
-                                <h3 className="text-lg font-bold uppercase mb-2">Scale Effortlessly</h3>
-                                <p className="text-gray-600 text-sm">
-                                    Manage 1 client or 100. The interface stays clean, fast, and intuitive.
-                                </p>
-                            </div>
-                        </div>
+                        {/* Interactive Demo Dashboard */}
+                        <DemoDashboard />
                     </div>
                 </section>
 

@@ -29,13 +29,14 @@ export const ClientManager: React.FC<ClientManagerProps> = ({ isOpen, onClose, o
 
     useEffect(() => {
         if (isOpen) {
+            // Set loading immediately for instant feedback
+            setLoading(true);
             loadData();
             setSearchTerm('');
         }
     }, [isOpen]);
 
     const loadData = () => {
-        setLoading(true);
         const t = Date.now();
         Promise.all([
             fetch(`/api/data/connections?t=${t}`).then(res => res.json()), // All available

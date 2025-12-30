@@ -5,6 +5,7 @@ import { logger, logAuthEvent, logSecurityEvent } from '../utils/logger';
 import { config } from '../config/env';
 import { authValidators, validate } from '../middleware/validator';
 import { authLimiter } from '../middleware/rateLimiter';
+import { syncConnections } from '../services/syncService';
 import bcrypt from 'bcrypt';
 
 const router = Router();
@@ -119,6 +120,11 @@ router.get('/google/callback', async (req: Request, res: Response) => {
             name
         });
 
+        // Immediately sync connections in background (don't wait)
+        syncConnections(accountId).catch(err =>
+            logger.error('Background sync failed after Google auth', err)
+        );
+
         // Redirect back to settings on the FRONTEND
         res.redirect(`${getBaseUrl(req)}/settings?status=success`);
     } catch (error: any) {
@@ -185,6 +191,11 @@ router.get('/meta/callback', async (req: Request, res: Response) => {
             email: email || `meta_${profileRes.data.id}`,
             name
         });
+
+        // Immediately sync connections in background (don't wait)
+        syncConnections(accountId).catch(err =>
+            logger.error('Background sync failed after Meta auth', err)
+        );
 
         res.redirect(`${getBaseUrl(req)}/settings?status=success`);
     } catch (error: any) {
