@@ -206,17 +206,32 @@ export const DemoDashboard: React.FC = () => {
     return (
         <div className="w-full max-w-7xl mx-auto">
             {/* Header */}
-            <div className="mb-6 flex flex-col items-center">
-                <div className="w-full flex justify-between items-start mb-4">
-                    <div className="w-10"></div> {/* Spacer for symmetry */}
-                    <div className="inline-block border border-black px-3 py-1">
-                        <span className="font-mono text-[10px] uppercase font-bold tracking-widest">LIVE DEMO</span>
+            <div className="mb-8 pb-4 border-b-4 border-black">
+                <div className="flex justify-between items-center mb-6">
+                    <div className="flex items-center gap-3">
+                        <div className="inline-block border border-black px-2 py-0.5 bg-black text-white">
+                            <span className="font-mono text-[10px] uppercase font-bold tracking-widest">LIVE DEMO</span>
+                        </div>
+                        <h2 className="text-2xl font-black uppercase tracking-tighter">Demo Dashboard</h2>
                     </div>
-                    <DemoAlertBadge />
+                    <div className="flex items-center gap-2">
+                        <DemoAlertBadge />
+                        <div className="h-9 px-4 text-[11px] font-mono border border-black bg-gray-100 text-gray-400 cursor-not-allowed uppercase tracking-wider flex items-center justify-center">
+                            Manage Client
+                        </div>
+                        <div className="h-9 px-4 border border-black bg-gray-50 text-gray-400 font-mono text-[11px] min-w-[200px] flex items-center justify-between uppercase cursor-not-allowed">
+                            <span>-- TechCorp --</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" className="w-4 h-4">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </div>
+                    </div>
                 </div>
-                <p className="text-sm text-gray-600 font-mono uppercase">
-                    Click any campaign • Sort & filter • No sign-up required
-                </p>
+                <div className="flex justify-center">
+                    <p className="text-[10px] text-gray-400 font-mono uppercase tracking-widest animate-pulse">
+                        Interactive Preview • Click campaigns to explore • Try the alerts above ↑
+                    </p>
+                </div>
             </div>
 
             <div className="border border-black overflow-hidden bg-white shadow-2xl">

@@ -139,10 +139,9 @@ export const DashboardPage: React.FC = () => {
 
                 <div className="flex justify-between items-end flex-wrap gap-4">
                     <div className="flex items-center gap-1">
-                        <AlertBadge />
                         <button
                             onClick={() => setIsManagerOpen(true)}
-                            className="text-[10px] font-mono border border-black px-2 py-1.5 hover:bg-black hover:text-white transition-all active:scale-95 cursor-pointer uppercase tracking-wider"
+                            className="h-9 px-4 text-[11px] font-mono border border-black hover:bg-black hover:text-white transition-all active:scale-95 cursor-pointer uppercase tracking-wider flex items-center justify-center"
                         >
                             Manage Client
                         </button>
@@ -151,7 +150,13 @@ export const DashboardPage: React.FC = () => {
                             id="client-select"
                             value={selectedAccountId}
                             onChange={handleAccountChange}
-                            className="border border-black bg-transparent font-mono text-[10px] p-1.5 min-w-[180px] focus:outline-none focus:ring-1 focus:ring-black cursor-pointer uppercase"
+                            className="h-9 px-4 border border-black bg-transparent font-mono text-[11px] min-w-[200px] focus:outline-none focus:ring-1 focus:ring-black cursor-pointer uppercase appearance-none"
+                            style={{
+                                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='black'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                                backgroundRepeat: 'no-repeat',
+                                backgroundPosition: 'right 0.5rem center',
+                                backgroundSize: '1rem'
+                            }}
                         >
                             <option value="" disabled>-- SELECT CLIENT --</option>
                             {accounts.map(account => (
