@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { DemoAlertBadge } from './DemoAlertBadge';
 
 // Mock campaign data
 interface DemoCampaign {
@@ -205,9 +206,13 @@ export const DemoDashboard: React.FC = () => {
     return (
         <div className="w-full max-w-7xl mx-auto">
             {/* Header */}
-            <div className="mb-6 text-center">
-                <div className="inline-block border border-black px-3 py-1 mb-4">
-                    <span className="font-mono text-[10px] uppercase font-bold tracking-widest">LIVE DEMO</span>
+            <div className="mb-6 flex flex-col items-center">
+                <div className="w-full flex justify-between items-start mb-4">
+                    <div className="w-10"></div> {/* Spacer for symmetry */}
+                    <div className="inline-block border border-black px-3 py-1">
+                        <span className="font-mono text-[10px] uppercase font-bold tracking-widest">LIVE DEMO</span>
+                    </div>
+                    <DemoAlertBadge />
                 </div>
                 <p className="text-sm text-gray-600 font-mono uppercase">
                     Click any campaign • Sort & filter • No sign-up required
