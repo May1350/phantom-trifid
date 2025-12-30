@@ -189,7 +189,7 @@ if (process.env.NODE_ENV === 'production') {
 } else {
     // Root endpoint for development
     app.get('/', (req, res) => {
-        res.send('Phantom Trifid Backend is running (Development)');
+        res.send('A Backend is running (Development)');
     });
 }
 

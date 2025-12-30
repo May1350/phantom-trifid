@@ -2,7 +2,7 @@
 # scripts/auto-sync.sh
 
 echo "------------------------------------------------"
-echo "🔄 Phantom Trifid Auto-Sync Started"
+echo "🔄 A Auto-Sync Started"
 echo "GitHub로 자동 업데이트를 시작합니다. (1분마다 체크)"
 echo "종료하려면 Ctrl+C를 누르세요."
 echo "------------------------------------------------"

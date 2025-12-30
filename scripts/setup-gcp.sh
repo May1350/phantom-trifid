@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Phantom Trifid - GCP Initial Setup Script
+# A - GCP Initial Setup Script
 # This script sets up your GCP project for the first time
 
 set -e  # Exit on error
@@ -80,7 +80,7 @@ setup_project() {
     
     case $choice in
         1)
-            read -p "Enter a project ID (e.g., phantom-trifid-prod): " PROJECT_ID
+            read -p "Enter a project ID (e.g., a-prod): " PROJECT_ID
             print_info "Creating project: $PROJECT_ID"
             
             gcloud projects create "$PROJECT_ID" --set-as-default
@@ -139,7 +139,7 @@ enable_apis() {
 create_service_account() {
     print_header "Creating Service Account"
     
-    SA_NAME="phantom-trifid-sa"
+    SA_NAME="a-sa"
     SA_EMAIL="${SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com"
     
     # Check if service account exists
@@ -148,7 +148,7 @@ create_service_account() {
     else
         print_info "Creating service account: $SA_NAME"
         gcloud iam service-accounts create "$SA_NAME" \
-            --display-name="Phantom Trifid Service Account" \
+            --display-name="A Service Account" \
             --project="$PROJECT_ID"
         print_success "Service account created: $SA_EMAIL"
     fi
@@ -215,7 +215,7 @@ print_summary() {
 
 # Main setup flow
 main() {
-    print_header "Phantom Trifid - GCP Initial Setup"
+    print_header "A - GCP Initial Setup"
     
     check_gcloud
     gcp_login

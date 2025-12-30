@@ -72,7 +72,7 @@ export const SignupPage: React.FC = () => {
         <div className="min-h-screen bg-black flex items-center justify-center p-4">
             <div className="bg-white w-full max-w-md p-8 border border-white/20 shadow-[0_0_50px_-12px_rgba(255,255,255,0.2)]">
                 <div className="mb-8 text-center">
-                    <h1 className="text-3xl font-black uppercase tracking-tighter mb-2">JOIN PHANTOM</h1>
+                    <h1 className="text-3xl font-black uppercase tracking-tighter mb-2">JOIN A</h1>
                     <p className="text-gray-500 font-mono text-xs uppercase">Create your agency account</p>
                 </div>
 

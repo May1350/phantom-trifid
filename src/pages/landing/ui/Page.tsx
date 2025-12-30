@@ -12,7 +12,7 @@ export const LandingPage: React.FC = () => {
                         <div className="w-8 h-8 bg-black flex items-center justify-center">
                             <span className="text-white font-black text-xl">P</span>
                         </div>
-                        <span className="font-black uppercase tracking-tighter text-xl">Phantom Trifid</span>
+                        <span className="font-black uppercase tracking-tighter text-xl">A</span>
                     </div>
 
                     <div className="flex items-center gap-4">
@@ -42,9 +42,11 @@ export const LandingPage: React.FC = () => {
                                 Supercharge Your <br />
                                 <span className="text-gray-400">Ad Performance.</span>
                             </h1>
-                            <p className="text-xl md:text-2xl font-medium max-w-2xl mb-12 text-gray-600">
-                                The minimalist budget management system for elite performance agencies.
-                                Unified insights from Google and Meta in one brutalist interface.
+                            <p className="text-xl md:text-2xl font-medium max-w-2xl mb-4 text-gray-600">
+                                Tired of juggling 5+ tabs just to check your ad budgets?
+                            </p>
+                            <p className="text-lg md:text-xl max-w-2xl mb-12 text-gray-500">
+                                Unify Google Ads and Meta budgets in one brutalist dashboard. Track in real-time. Never overspend again.
                             </p>
                             <div className="flex flex-col sm:flex-row gap-4">
                                 <Link to="/signup">
@@ -57,6 +59,131 @@ export const LandingPage: React.FC = () => {
                                         See Features
                                     </Button>
                                 </a>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                {/* Problem Statement Section */}
+                <section className="py-24 px-6 bg-white">
+                    <div className="max-w-7xl mx-auto">
+                        <div className="text-center mb-16">
+                            <h2 className="text-5xl md:text-6xl font-black uppercase tracking-tighter mb-6">
+                                Sound Familiar?
+                            </h2>
+                            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+                                You're managing ad budgets, but it feels like you're drowning in tabs.
+                            </p>
+                        </div>
+
+                        {/* Visual Pain Points */}
+                        <div className="mb-16">
+                            <img
+                                src="/budget-juggling.png"
+                                alt="The struggle of budget management across platforms"
+                                className="w-full max-w-4xl mx-auto rounded-lg shadow-2xl"
+                            />
+                        </div>
+
+                        {/* Pain Points Grid */}
+                        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+                            <div className="border-l-4 border-black pl-6">
+                                <div className="text-4xl mb-2">💢</div>
+                                <h3 className="text-xl font-bold uppercase mb-2">Tab Overload</h3>
+                                <p className="text-gray-600">
+                                    Google Ads, Meta Business Suite, Excel spreadsheets... at least 5 tabs open just to check your budgets.
+                                </p>
+                            </div>
+                            <div className="border-l-4 border-black pl-6">
+                                <div className="text-4xl mb-2">⏰</div>
+                                <h3 className="text-xl font-bold uppercase mb-2">No Real-Time View</h3>
+                                <p className="text-gray-600">
+                                    You can't see what's happening right now. By the time you realize you've overspent, it's too late.
+                                </p>
+                            </div>
+                            <div className="border-l-4 border-black pl-6">
+                                <div className="text-4xl mb-2">🔥</div>
+                                <h3 className="text-xl font-bold uppercase mb-2">Client Chaos</h3>
+                                <p className="text-gray-600">
+                                    Multiple clients? Good luck remembering which budget belongs where. End-of-month panic is your new normal.
+                                </p>
+                            </div>
+                            <div className="border-l-4 border-black pl-6">
+                                <div className="text-4xl mb-2">📊</div>
+                                <h3 className="text-xl font-bold uppercase mb-2">Manual Hell</h3>
+                                <p className="text-gray-600">
+                                    Copy. Paste. Calculate. Repeat. Hours wasted on tasks a computer should handle in seconds.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                {/* Before/After Comparison */}
+                <section className="py-24 px-6 bg-black text-white">
+                    <div className="max-w-7xl mx-auto">
+                        <div className="text-center mb-16">
+                            <h2 className="text-5xl md:text-6xl font-black uppercase tracking-tighter mb-6">
+                                There's a Better Way
+                            </h2>
+                        </div>
+                        <img
+                            src="/before-after.png"
+                            alt="Before and after comparison"
+                            className="w-full max-w-6xl mx-auto rounded-lg shadow-2xl"
+                        />
+                    </div>
+                </section>
+
+                {/* Dashboard Preview */}
+                <section className="py-24 px-6 bg-white">
+                    <div className="max-w-7xl mx-auto">
+                        <div className="text-center mb-12">
+                            <h2 className="text-5xl md:text-6xl font-black uppercase tracking-tighter mb-6">
+                                One Dashboard.<br />All Your Budgets.
+                            </h2>
+                            <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-12">
+                                Stop juggling. Start managing. See everything in one place, update in real-time, and never overspend again.
+                            </p>
+                        </div>
+
+                        {/* Dashboard Screenshot */}
+                        <div className="mb-12">
+                            <img
+                                src="/dashboard-preview.png"
+                                alt="Dashboard preview showing unified budget management"
+                                className="w-full max-w-6xl mx-auto rounded-lg shadow-2xl border-4 border-black"
+                            />
+                        </div>
+
+                        {/* Key Benefits */}
+                        <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+                            <div className="text-center">
+                                <div className="w-16 h-16 bg-black text-white flex items-center justify-center mx-auto mb-4 text-2xl font-black">
+                                    1
+                                </div>
+                                <h3 className="text-lg font-bold uppercase mb-2">See Everything</h3>
+                                <p className="text-gray-600 text-sm">
+                                    Google + Meta budgets side-by-side. Real-time updates. Zero lag.
+                                </p>
+                            </div>
+                            <div className="text-center">
+                                <div className="w-16 h-16 bg-black text-white flex items-center justify-center mx-auto mb-4 text-2xl font-black">
+                                    2
+                                </div>
+                                <h3 className="text-lg font-bold uppercase mb-2">Stay In Control</h3>
+                                <p className="text-gray-600 text-sm">
+                                    Set alerts for budget thresholds. Get notified before you overspend.
+                                </p>
+                            </div>
+                            <div className="text-center">
+                                <div className="w-16 h-16 bg-black text-white flex items-center justify-center mx-auto mb-4 text-2xl font-black">
+                                    3
+                                </div>
+                                <h3 className="text-lg font-bold uppercase mb-2">Scale Effortlessly</h3>
+                                <p className="text-gray-600 text-sm">
+                                    Manage 1 client or 100. The interface stays clean, fast, and intuitive.
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -104,7 +231,7 @@ export const LandingPage: React.FC = () => {
                                     Who demand perfection.
                                 </h2>
                                 <p className="text-gray-400 text-lg mb-10">
-                                    Phantom Trifid strips away the noise. No fluff, just the metrics that matter.
+                                    A strips away the noise. No fluff, just the metrics that matter.
                                     Optimized for technical teams who value functional excellence.
                                 </p>
                                 <Link to="/signup">
@@ -126,7 +253,7 @@ export const LandingPage: React.FC = () => {
                                 <div>{'>'} parsing_google_ads_data... [ok]</div>
                                 <div>{'>'} optimizing_budget_projection... [ok]</div>
                                 <div className="pt-4 text-white/20">////////////////////////////////////////</div>
-                                <div className="pt-2 text-white/60">PHANTOM_TRIFID_ACTIVE</div>
+                                <div className="pt-2 text-white/60">A_ACTIVE</div>
                             </div>
                         </div>
                     </div>
@@ -143,7 +270,7 @@ export const LandingPage: React.FC = () => {
                             <div className="w-6 h-6 bg-black flex items-center justify-center">
                                 <span className="text-white font-black text-sm">P</span>
                             </div>
-                            <span className="font-black uppercase tracking-tighter text-lg">Phantom Trifid</span>
+                            <span className="font-black uppercase tracking-tighter text-lg">A</span>
                         </div>
                         <p className="text-xs text-gray-400 font-mono uppercase tracking-widest">
                             © 2025 All Rights Reserved.

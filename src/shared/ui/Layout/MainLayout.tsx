@@ -48,7 +48,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
             {/* Sidebar */}
             <aside className="w-64 flex-shrink-0 border-r border-black flex flex-col h-full">
                 <div className="p-6 border-b border-black">
-                    <h1 className="font-black text-xl uppercase tracking-tighter">PHANTOM</h1>
+                    <h1 className="font-black text-xl uppercase tracking-tighter">A</h1>
                     <div className="text-[10px] font-mono mt-1 text-gray-500 truncate" title={userEmail || (userRole === 'admin' ? 'ADMIN_CONSOLE' : 'AGENCY_VIEW')}>
                         {userEmail || (userRole === 'admin' ? 'ADMIN_CONSOLE' : 'AGENCY_VIEW')}
                     </div>

@@ -6,7 +6,7 @@
 1. [Railway.app](https://railway.app/)에 접속합니다.
 2. **GitHub 계정**으로 로그인합니다.
 3. 메인 화면에서 **"New Project"** -> **"Deploy from GitHub repo"**를 선택합니다.
-4. 현재 프로젝트인 `phantom-trifid` 저장소를 선택합니다.
+4. 현재 프로젝트인 `a` 저장소를 선택합니다.
 5. **"Deploy Now"**를 클릭하기 전에 잠깐! 환경 변수 설정을 먼저 해야 합니다.
 
 ## 2. 환경 변수(Variables) 설정

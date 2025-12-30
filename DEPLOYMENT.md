@@ -1,4 +1,4 @@
-# Phantom Trifid - GCP Cloud Run 배포 가이드
+# A - GCP Cloud Run 배포 가이드
 
 이 문서는 개발 지식이 없는 사용자도 따라할 수 있도록 단계별로 작성되었습니다. 각 단계를 순서대로 따라하시면 됩니다.
 
@@ -177,7 +177,7 @@ Deployment Complete!
 
 ✓ Service deployed successfully!
 
-Service URL: https://phantom-trifid-xxxxx-an.a.run.app
+Service URL: https://a-xxxxx-an.a.run.app
 ```
 
 ---
@@ -210,7 +210,7 @@ curl https://your-service-url.run.app/health
 ### 3. GCP Console에서 확인
 
 1. [Cloud Run Console](https://console.cloud.google.com/run)에 접속
-2. `phantom-trifid` 서비스 클릭
+2. `a` 서비스 클릭
 3. 다음 정보를 확인:
    - 서비스 상태: ✓ (녹색)
    - 최근 배포 시간
@@ -273,7 +273,7 @@ gcloud projects get-iam-policy $(gcloud config get-value project)
 
 ```bash
 # 최근 로그 확인
-gcloud run services logs read phantom-trifid \
+gcloud run services logs read a \
   --region=asia-northeast3 \
   --limit=50
 ```
@@ -288,7 +288,7 @@ gcloud run services logs read phantom-trifid \
 
 1. Cloud Run 서비스의 환경 변수에 `FRONTEND_URL` 추가:
    ```bash
-   gcloud run services update phantom-trifid \
+   gcloud run services update a \
      --region=asia-northeast3 \
      --set-env-vars="FRONTEND_URL=https://your-frontend-url.com"
    ```
@@ -383,4 +383,4 @@ open https://console.cloud.google.com/billing
 
 **축하합니다! 🎉**
 
-Phantom Trifid가 성공적으로 배포되었습니다. 이제 전 세계 어디서나 서비스에 접속할 수 있습니다.
+A가 성공적으로 배포되었습니다. 이제 전 세계 어디서나 서비스에 접속할 수 있습니다.

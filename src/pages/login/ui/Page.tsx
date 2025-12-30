@@ -47,7 +47,7 @@ export const LoginPage: React.FC = () => {
 
                 <div className="mb-12 text-center">
                     <h1 className="text-3xl font-black uppercase tracking-tighter mb-2">
-                        Phantom Trifid
+                        A
                     </h1>
                     <p className="font-mono text-xs uppercase text-gray-500 tracking-widest">
                         Budget Management System v1.0
