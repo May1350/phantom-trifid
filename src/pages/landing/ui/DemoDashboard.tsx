@@ -214,8 +214,7 @@ export const DemoDashboard: React.FC = () => {
                         </div>
                         <h2 className="text-2xl font-black uppercase tracking-tighter">Demo Dashboard</h2>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <DemoAlertBadge />
+                    <div className="flex items-center gap-1">
                         <div className="h-9 px-4 text-[11px] font-mono border border-black bg-gray-100 text-gray-400 cursor-not-allowed uppercase tracking-wider flex items-center justify-center">
                             Manage Client
                         </div>
