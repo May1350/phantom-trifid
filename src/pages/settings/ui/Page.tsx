@@ -91,7 +91,7 @@ export const SettingsPage: React.FC = () => {
                                             type="checkbox"
                                             checked={settings?.enabledTypes.includes(type.id)}
                                             onChange={() => toggleType(type.id)}
-                                            className="w-5 h-5 border-2 border-black rounded-none appearance-none checked:bg-black relative before:content-[''] before:absolute before:inset-1 before:bg-white before:scale-0 checked:before:scale-100 transition-all cursor-pointer"
+                                            className="w-5 h-5 border-2 border-black rounded-none appearance-none checked:bg-black relative after:content-[''] after:absolute after:left-[5px] after:top-[1px] after:w-[6px] after:h-[10px] after:border-white after:border-b-2 after:border-r-2 after:rotate-45 after:scale-0 checked:after:scale-100 transition-all cursor-pointer"
                                         />
                                         <span className="uppercase font-mono text-xs group-hover:underline">{type.label}</span>
                                     </label>
