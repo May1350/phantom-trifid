@@ -91,7 +91,7 @@ export const SettingsPage: React.FC = () => {
                                             type="checkbox"
                                             checked={settings?.enabledTypes.includes(type.id)}
                                             onChange={() => toggleType(type.id)}
-                                            className="w-5 h-5 border-2 border-black rounded-none appearance-none checked:bg-black relative after:content-[''] after:absolute after:left-[5px] after:top-[1px] after:w-[6px] after:h-[10px] after:border-white after:border-b-2 after:border-r-2 after:rotate-45 after:scale-0 checked:after:scale-100 transition-all cursor-pointer"
+                                            className="w-5 h-5 border-2 border-black rounded-none appearance-none checked:bg-black checked:bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22white%22%20stroke-width%3D%224%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M20%206L9%2017l-5-5%22%2F%3E%3C%2Fsvg%3E')] bg-center bg-no-repeat transition-all cursor-pointer"
                                         />
                                         <span className="uppercase font-mono text-xs group-hover:underline">{type.label}</span>
                                     </label>
