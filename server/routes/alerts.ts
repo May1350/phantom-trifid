@@ -56,19 +56,27 @@ router.post('/check', async (req, res) => {
         console.error('[API] Error during alert check:', error);
         res.status(500).json({ error: 'Alert check failed' });
     }
-    // ==========================================
-    // GET /api/alerts/settings - 알람 설정 조회
-    // ==========================================
-    router.get('/settings', (req, res) => {
+});
+
+// ==========================================
+// GET /api/alerts/settings - 알람 설정 조회
+// ==========================================
+router.get('/settings', (req, res) => {
+    try {
         const accountId = req.accountId || 'admin';
         const settings = db.getAlertSettings(accountId);
         res.json(settings);
-    });
+    } catch (error: any) {
+        console.error('[API] Error fetching alert settings:', error);
+        res.status(500).json({ error: 'Failed to fetch settings' });
+    }
+});
 
-    // ==========================================
-    // POST /api/alerts/settings - 알람 설정 저장
-    // ==========================================
-    router.post('/settings', (req, res) => {
+// ==========================================
+// POST /api/alerts/settings - 알람 설정 저장
+// ==========================================
+router.post('/settings', async (req, res) => {
+    try {
         const accountId = req.accountId || 'admin';
         const settings = req.body;
 
@@ -76,8 +84,12 @@ router.post('/check', async (req, res) => {
             return res.status(400).json({ error: 'Invalid settings data' });
         }
 
-        db.setAlertSettings(accountId, settings);
+        await db.setAlertSettings(accountId, settings);
         res.json({ success: true });
-    });
+    } catch (error: any) {
+        console.error('[API] Error saving alert settings:', error);
+        res.status(500).json({ error: 'Failed to save settings' });
+    }
+});
 
-    export default router;
+export default router;

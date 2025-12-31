@@ -35,8 +35,8 @@ export const MainLayout: React.FC<MainLayoutProps> = ({
         ]
         : [
             { id: 'dashboard', label: 'OVERVIEW' },
-            { id: 'campaigns', label: 'CAMPAIGNS' },
-            { id: 'settings', label: 'CONNECTIONS' }
+            { id: 'connections', label: 'CONNECTIONS' },
+            { id: 'settings', label: 'SETTINGS' }
         ];
 
     const handleNavigate = (page: string) => {

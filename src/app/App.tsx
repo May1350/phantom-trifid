@@ -11,6 +11,7 @@ const LandingPage = lazy(() => import('../pages/landing/ui/Page').then(m => ({ d
 const AdminPage = lazy(() => import('../pages/admin/ui/Page').then(m => ({ default: m.AdminPage })));
 const DashboardPage = lazy(() => import('../pages/dashboard/ui/Page').then(m => ({ default: m.DashboardPage })));
 const SettingsPage = lazy(() => import('../pages/settings/ui/Page').then(m => ({ default: m.SettingsPage })));
+const ConnectionsPage = lazy(() => import('../pages/connections/ui/Page').then(m => ({ default: m.ConnectionsPage })));
 const MockOAuthPage = lazy(() => import('../pages/mock-oauth/ui/Page').then(m => ({ default: m.MockOAuthPage })));
 const AuthCallbackPage = lazy(() => import('../pages/auth/callback/ui/Page').then(m => ({ default: m.AuthCallbackPage })));
 
@@ -66,18 +67,9 @@ function AppLayout() {
       <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/dashboard" element={<AuthGuard requiredRole="agency"><DashboardPage /></AuthGuard>} />
+          <Route path="/connections" element={<AuthGuard requiredRole="agency"><ConnectionsPage /></AuthGuard>} />
           <Route path="/settings" element={<AuthGuard requiredRole="agency"><SettingsPage /></AuthGuard>} />
           <Route path="/mock-oauth/:provider" element={<MockOAuthPage />} />
-          <Route path="/campaigns" element={
-            <AuthGuard requiredRole="agency">
-              <div className="p-8">
-                <h1 className="text-2xl font-black uppercase mb-4">CAMPAIGNS</h1>
-                <div className="border border-black p-4 font-mono text-sm text-gray-400">
-                  Campaign Management (Coming Soon)
-                </div>
-              </div>
-            </AuthGuard>
-          } />
 
           <Route path="/admin" element={<AuthGuard requiredRole="admin"><AdminPage /></AuthGuard>} />
           <Route path="/users" element={

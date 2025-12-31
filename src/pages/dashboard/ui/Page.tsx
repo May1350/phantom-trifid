@@ -3,7 +3,7 @@ import { KPIGrid } from '../../../features/dashboard/ui/KPIGrid';
 import { CampaignTable, type Campaign } from '../../../features/dashboard/ui/CampaignTable';
 import { ClientManager } from '../../../features/dashboard/ui/ClientManager';
 import { MonthPicker } from '../../../features/dashboard/ui/MonthPicker';
-import { AlertBadge } from '../../../features/alerts/ui/AlertBadge';
+import { MonthPicker } from '../../../features/dashboard/ui/MonthPicker';
 
 interface Account {
     id: string;
@@ -135,7 +135,6 @@ export const DashboardPage: React.FC = () => {
                     <h1 className="text-3xl font-black uppercase tracking-tighter">
                         Agency Dashboard
                     </h1>
-                    <AlertBadge />
                 </div>
 
                 <div className="flex justify-between items-end flex-wrap gap-4">

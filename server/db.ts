@@ -244,6 +244,7 @@ const initializeDBSync = () => {
                 clients: [],
                 campaign_budgets: {},
                 alerts: [],
+                alert_settings: {},
                 settings: {}
             };
             fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2));
@@ -251,6 +252,12 @@ const initializeDBSync = () => {
 
         // 4. Migration & Seeding (safe merge)
         let changed = false;
+
+        // Migration: Ensure alert_settings exists
+        if (!data.alert_settings) {
+            data.alert_settings = {};
+            changed = true;
+        }
 
         // Ensure accounts list is seeded if empty or missing admin
         const adminExists = data.accounts && data.accounts.find(a => a.email === 'admin@gmail.com');
@@ -307,9 +314,14 @@ const initializeDBSync = () => {
             changed = true;
         }
 
-        // Migration from old structure
         if (!(data as any).accounts_old_check_done) {
             (data as any).accounts_old_check_done = true;
+            changed = true;
+        }
+
+        // Migration: Ensure alert_settings exists
+        if (!data.alert_settings) {
+            data.alert_settings = {};
             changed = true;
         }
 
@@ -348,9 +360,10 @@ export const db = {
                 clients: [],
                 campaign_budgets: {},
                 alerts: [],
+                alert_settings: {},
                 settings: {}
             };
-            return dbCache;
+            return dbCache as DBData;
         }
     },
 
