@@ -97,12 +97,20 @@ interface Alert {
     createdAt: string;
 }
 
+interface AlertSettings {
+    enabledTypes: string[];
+    dailyBudgetThreshold: number; // e.g., 20 for 20%
+    progressMismatchThreshold: number; // e.g., 20
+    exhaustionThreshold: number; // e.g., 95
+}
+
 interface DBData {
     accounts: Account[];
     accountTokens: AccountTokens[];
     clients: Client[];
     campaign_budgets: Record<string, CampaignBudgetConfig>;
     alerts: Alert[];
+    alert_settings: Record<string, AlertSettings>; // New field
     settings: {
         selected_account_id?: string;
     };
@@ -739,6 +747,42 @@ export const db = {
             data: value,
             updatedAt: new Date().toISOString()
         };
+        db.write(data);
+    },
+
+    // ==========================================
+    // ALERT SETTINGS
+    // ==========================================
+
+    getAlertSettings: (accountId: string): AlertSettings => {
+        const data = db.read();
+        const settings = data.alert_settings?.[accountId];
+
+        // Default settings if not found
+        if (!settings) {
+            return {
+                enabledTypes: [
+                    'daily_budget_over',
+                    'daily_budget_under',
+                    'progress_mismatch_over',
+                    'progress_mismatch_under',
+                    'campaign_ending',
+                    'budget_almost_exhausted',
+                    'budget_not_set'
+                ],
+                dailyBudgetThreshold: 20,
+                progressMismatchThreshold: 20,
+                exhaustionThreshold: 95
+            };
+        }
+
+        return settings;
+    },
+
+    setAlertSettings: (accountId: string, settings: AlertSettings) => {
+        const data = db.read();
+        if (!data.alert_settings) data.alert_settings = {};
+        data.alert_settings[accountId] = settings;
         db.write(data);
     }
 };

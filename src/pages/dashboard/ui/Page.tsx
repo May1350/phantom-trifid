@@ -135,6 +135,7 @@ export const DashboardPage: React.FC = () => {
                     <h1 className="text-3xl font-black uppercase tracking-tighter">
                         Agency Dashboard
                     </h1>
+                    <AlertBadge />
                 </div>
 
                 <div className="flex justify-between items-end flex-wrap gap-4">

@@ -448,6 +448,14 @@ export const DemoDashboard: React.FC = () => {
                     </div>
                 </div>
             )}
+
+            {/* Budget Manager Modal */}
+            <DemoBudgetManager
+                isOpen={isBudgetManagerOpen}
+                onClose={() => setIsBudgetManagerOpen(false)}
+                campaign={selectedCampaign}
+                onSave={handleUpdateBudget}
+            />
         </div>
     );
 };

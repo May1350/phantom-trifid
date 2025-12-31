@@ -69,6 +69,8 @@ export const checkDailyBudgetAlerts = async () => {
     for (const account of accounts) {
         if (account.type !== 'agency') continue;
 
+        const settings = db.getAlertSettings(account.id);
+
         const clients = db.getClients(account.id);
 
         for (const client of clients) {
@@ -107,11 +109,13 @@ export const checkDailyBudgetAlerts = async () => {
                         const diff = Math.abs(yesterdaySpend - dailyBudget);
                         const diffPercent = (diff / dailyBudget) * 100;
 
-                        if (diffPercent > 20) {
-                            const alertType = yesterdaySpend > dailyBudget * 1.2 ? 'daily_budget_over' : 'daily_budget_under';
+                        if (diffPercent > settings.dailyBudgetThreshold) {
+                            const alertType = yesterdaySpend > dailyBudget * (1 + settings.dailyBudgetThreshold / 100) ? 'daily_budget_over' : 'daily_budget_under';
+
+                            if (!settings.enabledTypes.includes(alertType)) continue;
                             if (db.hasRecentAlert(account.id, camp.id, alertType, 24)) continue;
 
-                            const message = yesterdaySpend > dailyBudget * 1.2
+                            const message = yesterdaySpend > dailyBudget * (1 + settings.dailyBudgetThreshold / 100)
                                 ? `⚠️ 일 예산 초과: 전일 소화 금액이 설정 예산보다 ${diffPercent.toFixed(1)}% 높습니다.`
                                 : `⚡ 일 예산 미달: 전일 소화 금액이 설정 예산보다 ${diffPercent.toFixed(1)}% 낮습니다.`;
 
@@ -148,6 +152,7 @@ export const checkProgressMismatchAlerts = async () => {
     for (const account of accounts) {
         if (account.type !== 'agency') continue;
 
+        const settings = db.getAlertSettings(account.id);
         const clients = db.getClients(account.id);
 
         for (const client of clients) {
@@ -196,14 +201,15 @@ export const checkProgressMismatchAlerts = async () => {
 
                         const progressDiff = Math.abs(budgetProgress - periodProgress);
 
-                        if (progressDiff > 20) {
-                            const alertType = budgetProgress > periodProgress + 20
+                        if (progressDiff > settings.progressMismatchThreshold) {
+                            const alertType = budgetProgress > periodProgress + settings.progressMismatchThreshold
                                 ? 'progress_mismatch_over'
                                 : 'progress_mismatch_under';
 
+                            if (!settings.enabledTypes.includes(alertType)) continue;
                             if (db.hasRecentAlert(account.id, camp.id, alertType, 24)) continue;
 
-                            const message = budgetProgress > periodProgress + 20
+                            const message = budgetProgress > periodProgress + settings.progressMismatchThreshold
                                 ? `🔴 예산 소진 과다: 예산 진척률(${budgetProgress.toFixed(1)}%)이 기간 진척률(${periodProgress.toFixed(1)}%)보다 ${progressDiff.toFixed(1)}% 높습니다.`
                                 : `🟡 예산 소진 부족: 예산 진척률(${budgetProgress.toFixed(1)}%)이 기간 진척률(${periodProgress.toFixed(1)}%)보다 ${progressDiff.toFixed(1)}% 낮습니다.`;
 
@@ -240,6 +246,7 @@ export const checkCampaignEndingAlerts = async () => {
     for (const account of accounts) {
         if (account.type !== 'agency') continue;
 
+        const settings = db.getAlertSettings(account.id);
         const clients = db.getClients(account.id);
 
         for (const client of clients) {
@@ -287,6 +294,7 @@ export const checkCampaignEndingAlerts = async () => {
                             const spendRate = (totalSpend / activePeriod.amount) * 100;
 
                             if (spendRate < 80) {
+                                if (!settings.enabledTypes.includes('campaign_ending')) continue;
                                 if (db.hasRecentAlert(account.id, camp.id, 'campaign_ending', 24)) continue;
 
                                 const message = `📅 캠페인 종료 임박: ${daysLeft}일 남았으나 예산 소진율이 ${spendRate.toFixed(1)}%입니다.`;
@@ -325,6 +333,7 @@ export const checkBudgetExhaustedAlerts = async () => {
     for (const account of accounts) {
         if (account.type !== 'agency') continue;
 
+        const settings = db.getAlertSettings(account.id);
         const clients = db.getClients(account.id);
 
         for (const client of clients) {
@@ -367,7 +376,8 @@ export const checkBudgetExhaustedAlerts = async () => {
                         const totalSpend = parseFloat(campDetailRes.data.insights?.data?.[0]?.spend || 0);
                         const spendRate = (totalSpend / activePeriod.amount) * 100;
 
-                        if (spendRate >= 95) {
+                        if (spendRate >= settings.exhaustionThreshold) {
+                            if (!settings.enabledTypes.includes('budget_almost_exhausted')) continue;
                             if (db.hasRecentAlert(account.id, camp.id, 'budget_almost_exhausted', 24)) continue;
 
                             const message = `🚨 예산 소진 ${spendRate.toFixed(1)}% - 캠페인이 곧 중지될 수 있습니다.`;
@@ -403,6 +413,7 @@ export const checkBudgetNotSetAlerts = async () => {
     for (const account of accounts) {
         if (account.type !== 'agency') continue;
 
+        const settings = db.getAlertSettings(account.id);
         const clients = db.getClients(account.id);
 
         for (const client of clients) {
@@ -424,6 +435,7 @@ export const checkBudgetNotSetAlerts = async () => {
                         const budgetConfig = db.getCampaignBudget(camp.id);
 
                         if (!budgetConfig || !budgetConfig.periods || budgetConfig.periods.length === 0) {
+                            if (!settings.enabledTypes.includes('budget_not_set')) continue;
                             if (db.hasRecentAlert(account.id, camp.id, 'budget_not_set', 168)) continue;
 
                             const message = `⚙️ 예산 미설정: 활성 캠페인이지만 커스텀 예산이 설정되지 않았습니다.`;

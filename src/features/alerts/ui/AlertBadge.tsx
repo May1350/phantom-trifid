@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { AlertSettingsModal } from './AlertSettingsModal';
 
 interface Alert {
     id: string;
@@ -24,6 +25,7 @@ export const AlertBadge: React.FC = () => {
     const [alerts, setAlerts] = useState<Alert[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [isOpen, setIsOpen] = useState(false);
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const popoverRef = useRef<HTMLDivElement>(null);
 
     // 알람 목록 조회
@@ -173,7 +175,16 @@ export const AlertBadge: React.FC = () => {
             {isOpen && (
                 <div className="absolute right-0 mt-2 w-96 bg-white border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] z-50 max-h-[500px] overflow-y-auto">
                     <div className="border-b-2 border-black p-3 bg-black text-white flex justify-between items-center sticky top-0">
-                        <h3 className="font-bold uppercase text-xs tracking-wider">System Alerts ({alerts.length})</h3>
+                        <div className="flex items-center gap-2">
+                            <h3 className="font-bold uppercase text-xs tracking-wider">System Alerts ({alerts.length})</h3>
+                            <button
+                                onClick={() => setIsSettingsOpen(true)}
+                                className="p-1 hover:bg-white/20 transition-colors"
+                                title="Alert Settings"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.72V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" /><circle cx="12" cy="12" r="3" /></svg>
+                            </button>
+                        </div>
                         <button
                             onClick={() => setIsOpen(false)}
                             className="text-white hover:text-gray-300 font-bold uppercase text-xs"
@@ -243,6 +254,11 @@ export const AlertBadge: React.FC = () => {
                     </div>
                 </div>
             )}
+
+            <AlertSettingsModal
+                isOpen={isSettingsOpen}
+                onClose={() => setIsSettingsOpen(false)}
+            />
         </div>
     );
 };
