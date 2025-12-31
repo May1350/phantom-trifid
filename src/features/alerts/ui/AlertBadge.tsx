@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { AlertSettingsModal } from './AlertSettingsModal';
+import { useNavigate } from 'react-router-dom';
 
 interface Alert {
     id: string;
@@ -25,7 +25,7 @@ export const AlertBadge: React.FC = () => {
     const [alerts, setAlerts] = useState<Alert[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [isOpen, setIsOpen] = useState(false);
-    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const navigate = useNavigate();
     const popoverRef = useRef<HTMLDivElement>(null);
 
     // 알람 목록 조회
@@ -178,7 +178,10 @@ export const AlertBadge: React.FC = () => {
                         <div className="flex items-center gap-2">
                             <h3 className="font-bold uppercase text-xs tracking-wider">System Alerts ({alerts.length})</h3>
                             <button
-                                onClick={() => setIsSettingsOpen(true)}
+                                onClick={() => {
+                                    setIsOpen(false);
+                                    navigate('/settings');
+                                }}
                                 className="p-1 hover:bg-white/20 transition-colors"
                                 title="Alert Settings"
                             >
@@ -255,10 +258,6 @@ export const AlertBadge: React.FC = () => {
                 </div>
             )}
 
-            <AlertSettingsModal
-                isOpen={isSettingsOpen}
-                onClose={() => setIsSettingsOpen(false)}
-            />
         </div>
     );
 };
