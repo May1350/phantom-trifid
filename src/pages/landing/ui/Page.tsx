@@ -32,54 +32,39 @@ export const LandingPage: React.FC = () => {
             </nav>
 
             <main>
-                {/* Hero Section */}
-                <section className="pt-40 pb-20 px-6">
+                {/* Hero Section + Integrated Demo */}
+                <section className="pt-32 pb-20 px-6">
                     <div className="max-w-7xl mx-auto">
-                        <div className="max-w-3xl">
+                        <div className="text-center mb-16">
                             <div className="inline-block border border-black px-2 py-1 mb-6">
                                 <span className="font-mono text-[10px] uppercase font-bold tracking-widest">Version 1.0 Release</span>
                             </div>
-                            <h1 className="text-6xl md:text-8xl font-black uppercase tracking-tighter leading-[0.9] mb-8">
+                            <h1 className="text-5xl md:text-8xl font-black uppercase tracking-tighter leading-[0.9] mb-8">
                                 Supercharge Your <br />
                                 <span className="text-gray-400">Ad Performance.</span>
                             </h1>
-                            <p className="text-xl md:text-2xl font-medium max-w-2xl mb-4 text-gray-600">
-                                Tired of juggling 5+ tabs just to check your ad budgets?
+                            <p className="text-lg md:text-xl font-medium max-w-2xl mx-auto mb-10 text-gray-500">
+                                Unify Google Ads and Meta budgets in one brutalist dashboard.<br className="hidden md:block" />
+                                <span className="text-black font-bold">Try the fully interactive demo below. No sign-up required.</span>
                             </p>
-                            <p className="text-lg md:text-xl max-w-2xl mb-12 text-gray-500">
-                                Unify Google Ads and Meta budgets in one brutalist dashboard. Track in real-time. Never overspend again.
-                            </p>
-                            <div className="flex flex-col sm:flex-row gap-4">
+                            <div className="flex flex-col sm:flex-row gap-4 justify-center">
                                 <Link to="/signup">
-                                    <Button variant="primary" className="min-w-[200px] text-lg">
-                                        Start Propelling
+                                    <Button variant="primary" className="min-w-[240px] text-lg py-4">
+                                        Start Propelling Now
                                     </Button>
                                 </Link>
-                                <a href="#features" className="min-w-[200px]">
-                                    <Button variant="outline" className="w-full text-lg">
-                                        See Features
-                                    </Button>
-                                </a>
                             </div>
                         </div>
-                    </div>
-                </section>
 
-
-                {/* Dashboard Preview */}
-                <section className="py-24 px-6 bg-white">
-                    <div className="max-w-7xl mx-auto">
-                        <div className="text-center mb-12">
-                            <h2 className="text-5xl md:text-6xl font-black uppercase tracking-tighter mb-6">
-                                Try It Yourself.<br />No Sign-Up Required.
-                            </h2>
-                            <p className="text-xl text-gray-600 max-w-2xl mx-auto mb-12">
-                                This is a fully functional demo. Click campaigns, sort columns, filter by status. Experience the real product right now.
-                            </p>
+                        {/* Interactive Demo Dashboard - Highlighted as the centerpiece */}
+                        <div className="relative">
+                            <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10 bg-black text-white px-4 py-1 text-[10px] font-black uppercase tracking-[0.2em] shadow-[4px_4px_0px_0px_rgba(255,255,255,1)] border border-white/20">
+                                Interactive Demo
+                            </div>
+                            <div className="shadow-[24px_24px_0px_0px_rgba(0,0,0,0.05)]">
+                                <DemoDashboard />
+                            </div>
                         </div>
-
-                        {/* Interactive Demo Dashboard */}
-                        <DemoDashboard />
                     </div>
                 </section>
 
