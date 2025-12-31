@@ -3,7 +3,6 @@ import { KPIGrid } from '../../../features/dashboard/ui/KPIGrid';
 import { CampaignTable, type Campaign } from '../../../features/dashboard/ui/CampaignTable';
 import { ClientManager } from '../../../features/dashboard/ui/ClientManager';
 import { MonthPicker } from '../../../features/dashboard/ui/MonthPicker';
-import { MonthPicker } from '../../../features/dashboard/ui/MonthPicker';
 
 interface Account {
     id: string;
