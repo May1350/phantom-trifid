@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { DemoAlertBadge } from './DemoAlertBadge';
+import { DemoBudgetManager } from './DemoBudgetManager';
 
 // Mock campaign data
 interface DemoCampaign {
@@ -115,10 +116,20 @@ const StatusIndicator: React.FC<{ status: 'gray' | 'green' | 'yellow' | 'red' }>
 };
 
 export const DemoDashboard: React.FC = () => {
-    const [campaigns] = useState<DemoCampaign[]>(DEMO_CAMPAIGNS);
+    const [campaigns, setCampaigns] = useState<DemoCampaign[]>(DEMO_CAMPAIGNS);
     const [filterStatus, setFilterStatus] = useState<FilterStatus>('all');
     const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: SortDirection } | null>(null);
     const [selectedCampaign, setSelectedCampaign] = useState<DemoCampaign | null>(null);
+    const [isBudgetManagerOpen, setIsBudgetManagerOpen] = useState(false);
+
+    const handleUpdateBudget = (newBudget: number) => {
+        if (!selectedCampaign) return;
+        setCampaigns(prev => prev.map(c =>
+            c.id === selectedCampaign.id ? { ...c, budget: newBudget } : c
+        ));
+        // Update selected campaign reference for the popup
+        setSelectedCampaign(prev => prev ? { ...prev, budget: newBudget } : null);
+    };
 
     const handleSort = (key: SortKey) => {
         let direction: SortDirection = 'asc';
@@ -417,12 +428,20 @@ export const DemoDashboard: React.FC = () => {
                                 <span className="font-bold">¥{selectedCampaign.spend.toLocaleString()}</span>
                             </div>
                         </div>
-                        <button
-                            onClick={() => setSelectedCampaign(null)}
-                            className="w-full bg-black text-white py-3 font-bold uppercase hover:bg-gray-800 transition-colors"
-                        >
-                            Close
-                        </button>
+                        <div className="flex flex-col gap-3">
+                            <button
+                                onClick={() => setIsBudgetManagerOpen(true)}
+                                className="w-full bg-black text-white py-3 font-bold uppercase hover:bg-gray-800 transition-all flex items-center justify-center gap-2"
+                            >
+                                <span>✏️</span> Edit Budget
+                            </button>
+                            <button
+                                onClick={() => setSelectedCampaign(null)}
+                                className="w-full bg-white text-black py-2 font-bold uppercase text-xs hover:underline"
+                            >
+                                Close
+                            </button>
+                        </div>
                         <p className="text-xs text-center text-gray-500 mt-4 font-mono">
                             This is a demo. Sign up to manage real campaigns.
                         </p>
