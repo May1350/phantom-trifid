@@ -29,10 +29,11 @@ dist-ssr
 .env.production.local
 *.env*
 !server/.env.example
-*.backup
-*.production
-
+# Database / Backups
 database.json
+server/database.json
+*.backup
+*.bak*
 *.json.backup
 
 

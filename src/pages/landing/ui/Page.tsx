@@ -176,8 +176,12 @@ export const LandingPage: React.FC = () => {
                         <div className="space-y-4">
                             <h4 className="font-bold uppercase text-[10px] tracking-widest text-gray-400">Legal</h4>
                             <ul className="space-y-2 text-sm font-bold uppercase transition-colors">
-                                <li className="hover:opacity-60 cursor-pointer">Privacy</li>
-                                <li className="hover:opacity-60 cursor-pointer">Terms</li>
+                                <li className="hover:opacity-60 cursor-pointer">
+                                    <Link to="/privacy">Privacy</Link>
+                                </li>
+                                <li className="hover:opacity-60 cursor-pointer">
+                                    <Link to="/terms">Terms</Link>
+                                </li>
                             </ul>
                         </div>
                     </div>

@@ -285,10 +285,29 @@ router.get('/google/login/callback', async (req, res) => {
 
             logger.info(`Google signup successful: ${email}`);
         } else {
-            // LOGIN MODE: Only allow existing accounts
+            // LOGIN MODE: Allow existing accounts or auto-create if missing
             if (!account) {
-                logger.info(`Google login rejected: ${email} is not registered`);
-                return res.redirect(`${getBaseUrl(req)}/login?error=not_registered&email=${encodeURIComponent(email)}`);
+                logger.info(`Google login: Auto-creating account for ${email}`);
+
+                // Create new account automatically
+                const newAccountId = `user_${Date.now()}`;
+                const randomPassword = await bcrypt.hash(Math.random().toString(36), 10);
+
+                db.createAccount({
+                    id: newAccountId,
+                    name: name,
+                    email: email,
+                    password: randomPassword,
+                    type: 'agency',
+                    status: 'active',
+                    provider: 'google'
+                });
+
+                account = db.getAccount(newAccountId);
+
+                if (!account) {
+                    return res.status(500).send('Auto-account creation failed');
+                }
             }
 
             // Check account status

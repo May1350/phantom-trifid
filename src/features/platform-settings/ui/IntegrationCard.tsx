@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from '../../../shared/ui';
+import { GoogleSignInButton } from '../../../shared/ui/GoogleSignInButton';
 
 interface ConnectedAccount {
     email?: string;
@@ -52,9 +53,17 @@ export const IntegrationCard: React.FC<IntegrationCardProps> = ({
                         </div>
                     </div>
 
-                    <Button variant={isConnected ? "outline" : "primary"} onClick={onConnect}>
-                        {isConnected ? 'ADD ANOTHER ACCOUNT' : 'CONNECT'}
-                    </Button>
+                    {platformName === 'Google Ads' ? (
+                        <GoogleSignInButton
+                            onClick={onConnect}
+                            label={isConnected ? 'ADD ACCOUNT' : 'CONNECT'}
+                            className="!py-2 !px-4 !shadow-none !border !border-black !rounded-none font-bold uppercase text-xs"
+                        />
+                    ) : (
+                        <Button variant={isConnected ? "outline" : "primary"} onClick={onConnect}>
+                            {isConnected ? 'ADD ANOTHER' : 'CONNECT'}
+                        </Button>
+                    )}
                 </div>
 
                 {isConnected && (

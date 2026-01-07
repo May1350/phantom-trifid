@@ -14,6 +14,8 @@ const SettingsPage = lazy(() => import('../pages/settings/ui/Page').then(m => ({
 const ConnectionsPage = lazy(() => import('../pages/connections/ui/Page').then(m => ({ default: m.ConnectionsPage })));
 const MockOAuthPage = lazy(() => import('../pages/mock-oauth/ui/Page').then(m => ({ default: m.MockOAuthPage })));
 const AuthCallbackPage = lazy(() => import('../pages/auth/callback/ui/Page').then(m => ({ default: m.AuthCallbackPage })));
+const PrivacyPolicy = lazy(() => import('../pages/legal/ui/PrivacyPolicy').then(m => ({ default: m.PrivacyPolicy })));
+const TermsOfService = lazy(() => import('../pages/legal/ui/TermsOfService').then(m => ({ default: m.TermsOfService })));
 
 // Loading component
 const PageLoader = () => (
@@ -100,6 +102,8 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/auth-callback" element={<AuthCallbackPage />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/terms" element={<TermsOfService />} />
           <Route path="/*" element={<AppLayout />} />
         </Routes>
       </Suspense>

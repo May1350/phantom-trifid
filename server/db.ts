@@ -125,12 +125,79 @@ interface DBData {
 }
 
 // ==========================================
-// MEMORY CACHE
+// CONFIGURATION & MEMORY CACHE
 // ==========================================
 
 let dbCache: DBData | null = null;
 let writeTimeout: NodeJS.Timeout | null = null;
 const WRITE_DEBOUNCE_MS = 100;
+const MAX_BACKUPS = 10; // Keep up to 10 rotating backups
+
+/**
+ * Validates DB data before writing to prevent accidental data loss.
+ * Returns true if data looks healthy, false if suspicious.
+ */
+const validateDBData = (data: DBData): { valid: boolean; reason?: string } => {
+    if (!data || !Array.isArray(data.accounts)) {
+        return { valid: false, reason: 'Invalid structure: missing accounts' };
+    }
+
+    // Critical data check: Accounts should not suddenly drop to 0 if they were populated
+    if (data.accounts.length === 0) {
+        return { valid: false, reason: 'Critical data loss: accounts list is empty' };
+    }
+
+    // Platform connections check: Losing all tokens is extremely suspicious
+    // (Only if we previously had tokens - we checking for sudden drop)
+    const currentTokens = data.accountTokens?.length || 0;
+    if (dbCache && dbCache.accountTokens && dbCache.accountTokens.length > 0 && currentTokens === 0) {
+        return { valid: false, reason: 'Suspicious data loss: all account tokens missing' };
+    }
+
+    return { valid: true };
+};
+
+/**
+ * Rotates backup files: .bak.9 -> .bak.10, .bak.8 -> .bak.9, ..., current -> .bak.1
+ */
+const rotateBackups = async () => {
+    try {
+        for (let i = MAX_BACKUPS - 1; i >= 1; i--) {
+            const oldPath = `${DB_PATH}.bak.${i}`;
+            const newPath = `${DB_PATH}.bak.${i + 1}`;
+            if (await fs.pathExists(oldPath)) {
+                await fs.move(oldPath, newPath, { overwrite: true });
+            }
+        }
+        if (await fs.pathExists(DB_PATH)) {
+            await fs.copy(DB_PATH, `${DB_PATH}.bak.1`, { overwrite: true });
+        }
+    } catch (e) {
+        logger.error('Failed to rotate backups', { error: (e as Error).message });
+    }
+};
+
+/**
+ * Synchronously flushes cache to disk. Used on process exit.
+ */
+export const flushDBSync = () => {
+    if (!dbCache) return;
+
+    const validation = validateDBData(dbCache);
+    if (!validation.valid) {
+        logger.error(`Bypassing flushDBSync: ${validation.reason}`);
+        return;
+    }
+
+    try {
+        const tempPath = `${DB_PATH}.exit_tmp`;
+        fs.writeFileSync(tempPath, JSON.stringify(dbCache, null, 2), 'utf-8');
+        fs.renameSync(tempPath, DB_PATH);
+        logger.info('DB flushed successfully on exit');
+    } catch (e) {
+        logger.error('Failed to flush DB on exit', { error: (e as Error).message });
+    }
+};
 
 // ==========================================
 // INITIALIZATION & MIGRATION
@@ -153,10 +220,24 @@ const initializeDBSync = () => {
                 }
 
                 // Smart Recovery: Check if DB seems to have been reset (empty lists) while backup has data
-                if (fs.existsSync(`${DB_PATH}.backup`)) {
+                if (fs.existsSync(`${DB_PATH}.backup`) || fs.existsSync(`${DB_PATH}.bak.1`)) {
                     try {
-                        const backupStr = fs.readFileSync(`${DB_PATH}.backup`, 'utf-8');
-                        const backupData = JSON.parse(backupStr);
+                        let backupData: DBData | null = null;
+
+                        // Try standard backup first, then newest rotating backup
+                        const backupPaths = [`${DB_PATH}.backup`, `${DB_PATH}.bak.1`];
+                        for (const bPath of backupPaths) {
+                            if (fs.existsSync(bPath)) {
+                                const bStr = fs.readFileSync(bPath, 'utf-8');
+                                const parsed = JSON.parse(bStr);
+                                if (parsed && Array.isArray(parsed.accounts) && parsed.accounts.length > 0) {
+                                    backupData = parsed;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (!backupData) throw new Error('No valid backup found');
 
                         // Indicators of data: tokens, clients, or campaign budgets
                         const currentHasData = (data.accountTokens?.length || 0) > 0 || (data.clients?.length || 0) > 0 || Object.keys(data.campaign_budgets || {}).length > 0;
@@ -167,7 +248,7 @@ const initializeDBSync = () => {
                             data = backupData;
                             // Immediately persist the restored data
                             fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2));
-                            logger.info('Successfully restored database from backup');
+                            logger.info('Successfully restored database from backup during init');
                         }
                     } catch (backupCheckError) {
                         logger.warn('Failed to check backup for smart recovery', { error: (backupCheckError as Error).message });
@@ -183,21 +264,24 @@ const initializeDBSync = () => {
             }
         }
 
-        // 2. Recovery from backup if main DB is missing or invalid
-        if (!data && fs.existsSync(`${DB_PATH}.backup`)) {
-            try {
-                logger.warn('Attempting to restore from backup...');
-                const backupStr = fs.readFileSync(`${DB_PATH}.backup`, 'utf-8');
-                const backupData = JSON.parse(backupStr);
+        // 2. Recovery from any backup if main DB is missing or invalid
+        if (!data) {
+            logger.warn('Main DB missing or invalid. Searching across all backups...');
+            const backupCandidates = [`${DB_PATH}.backup`, `${DB_PATH}.bak.1`, `${DB_PATH}.bak.2`, `${DB_PATH}.bak.3`];
 
-                if (backupData && Array.isArray(backupData.accounts)) {
-                    data = backupData;
-                    // Restore physical file
-                    fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2));
-                    logger.info('Successfully restored database from backup');
+            for (const bPath of backupCandidates) {
+                if (fs.existsSync(bPath)) {
+                    try {
+                        const bStr = fs.readFileSync(bPath, 'utf-8');
+                        const parsed = JSON.parse(bStr);
+                        if (parsed && Array.isArray(parsed.accounts) && parsed.accounts.length > 0) {
+                            data = parsed;
+                            logger.info(`Recovered from backup: ${bPath}`);
+                            fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2));
+                            break;
+                        }
+                    } catch (e) { }
                 }
-            } catch (backupError) {
-                logger.error('Failed to recover from backup', { error: (backupError as Error).message });
             }
         }
 
@@ -368,13 +452,28 @@ export const db = {
     },
 
     write: async (data: DBData): Promise<void> => {
-        dbCache = data;
-
+        // Debounce write
         if (writeTimeout) {
             clearTimeout(writeTimeout);
         }
 
         writeTimeout = setTimeout(async () => {
+            const validation = validateDBData(data);
+            if (!validation.valid) {
+                logger.error('CRITICAL: DB Write blocked to prevent data loss', {
+                    reason: validation.reason,
+                    stats: {
+                        accounts: data.accounts?.length,
+                        tokens: data.accountTokens?.length,
+                        clients: data.clients?.length
+                    }
+                });
+                // Restore from cache to revert in-memory corruption
+                dbCache = db.read();
+                return;
+            }
+
+            dbCache = data;
             const tempPath = `${DB_PATH}.tmp`;
             const backupPath = `${DB_PATH}.backup`;
 
@@ -382,19 +481,16 @@ export const db = {
                 // 1. Write to temporary file first
                 await fs.writeFile(tempPath, JSON.stringify(data, null, 2), 'utf-8');
 
-                // 2. Backup existing file if it exists
+                // 2. Rotate and Backup
                 if (await fs.pathExists(DB_PATH)) {
-                    // Rotate existing backup if present
-                    if (await fs.pathExists(backupPath)) {
-                        await fs.copy(backupPath, `${backupPath}.old`, { overwrite: true });
-                    }
+                    await rotateBackups();
                     await fs.copy(DB_PATH, backupPath, { overwrite: true });
                 }
 
                 // 3. Atomic move: replace original with temp file
                 await fs.move(tempPath, DB_PATH, { overwrite: true });
 
-                logger.debug('DB saved successfully');
+                logger.debug('DB saved successfully with rotating backups');
             } catch (error) {
                 logError(error as Error, { operation: 'db.write', dbPath: DB_PATH });
 

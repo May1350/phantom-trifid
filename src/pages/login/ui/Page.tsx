@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { LoginForm } from '../../../features/auth/ui/LoginForm';
 import { storage } from '../../../shared/lib/storage';
+import { GoogleSignInButton } from '../../../shared/ui/GoogleSignInButton';
 
 export const LoginPage: React.FC = () => {
     const navigate = useNavigate();
@@ -82,13 +83,11 @@ export const LoginPage: React.FC = () => {
                 <LoginForm onLogin={handleLogin} />
 
                 <div className="mt-8 pt-8 border-t border-gray-100 space-y-4">
-                    <button
+                    <GoogleSignInButton
                         onClick={() => window.location.href = '/api/auth/google/login'}
-                        className="w-full bg-white border-2 border-black py-3 font-bold uppercase hover:bg-gray-50 transition-colors flex items-center justify-center gap-2 text-sm"
-                    >
-                        <span className="font-serif font-black text-lg">G</span>
-                        <span>Log in with Google</span>
-                    </button>
+                        label="Continue with Google"
+                        className="w-full !py-3 !shadow-none !border-2 !border-black !rounded-none font-bold uppercase"
+                    />
 
                     <div className="text-center">
                         <Link to="/signup" className="text-xs font-mono text-gray-500 hover:text-black uppercase border-b border-transparent hover:border-black transition-colors">

@@ -246,6 +246,14 @@ const server = app.listen(PORT, '0.0.0.0', () => {
 const gracefulShutdown = (signal: string) => {
     logger.info(`${signal} received, starting graceful shutdown...`);
 
+    // Ensure DB is flushed to disk before exiting
+    try {
+        const { flushDBSync } = require('./db');
+        flushDBSync();
+    } catch (e) {
+        logger.error('Failed to flush DB during shutdown', { error: (e as Error).message });
+    }
+
     server.close(() => {
         logger.info('HTTP server closed');
         process.exit(0);
